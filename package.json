@@ -1,6 +1,6 @@
 {
   "name": "mediasoup-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "JavaScript cli tool for monitoring mediasoup server applications.",
   "main": "dist/bin/observerEventsLIstener.js",
   "scripts": {
@@ -38,5 +38,4 @@
   "peerDependencies": {
     "mediasoup": "3.x"
   }
-  
 }
