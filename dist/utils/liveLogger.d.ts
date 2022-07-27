@@ -1,0 +1,11 @@
+import { Server } from "socket.io";
+import { ClientToServerEvents, InterServerEvents, ServerToClientEvents, SocketData } from "./types";
+export declare const logTransport: (io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) => void;
+export declare const logConsumers: (io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) => void;
+export declare const logProducers: (io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) => void;
+export declare const logdataProducers: (io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) => void;
+export declare const logdataConsumers: (io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) => void;
+export declare const logRouters: (io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) => void;
+export declare const logWorkers: (io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) => void;
+export declare const logWebrtcServer: (io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) => void;
+export declare const activeLog: (io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>, name: string, id: number | string) => void;
