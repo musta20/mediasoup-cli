@@ -8,12 +8,22 @@
 ##### !Notice : this tool only reflect data based on your  app if you didn't close router it will still appear in the cli
 ##### !Notice : this toole require mediasoup 3
 #
+## install
+
+
+```sh
+yarn add mediasoup-cli
+or 
+npm i mediasoup-cli
+```
 ## Usage
 
 
 ```sh
 const mediasoup = require("mediasoup");
 const mediaSoupCli = require("mediasoup-cli");
+//or
+import mediaSoupCli from "mediasoup-cli";
 
 //pass mediasoup instance to observer function
 mediaSoupCli.observer(mediasoup)
