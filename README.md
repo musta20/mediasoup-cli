@@ -6,6 +6,7 @@
 - Showing current object workers , routers , transports ... 
 - Real time logging object workers , routers , transports  ... 
 ##### !Notice : this tool only reflect data based on your  app if you didn't close router it will still appear in the cli
+##### !Notice : this toole require mediasoup 3
 #
 ## Usage
 
