@@ -5,14 +5,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
-dotenv_1.default.config({ path: path_1.default.join(path_1.default.resolve(__dirname, ".."), "config.env") });
 const getConfig = () => {
-    console.log(process.env.MEDIA_SOUP_CLI_PORT);
     return {
         MEDIA_SOUP_CLI_PORT: process.env.MEDIA_SOUP_CLI_PORT ? Number(process.env.MEDIA_SOUP_CLI_PORT) : undefined,
     };
 };
 const getSanitzedConfig = () => {
+    dotenv_1.default.config({ path: path_1.default.join(path_1.default.resolve(__dirname, ".."), "config.env") });
     const config = getConfig();
     for (const [key, value] of Object.entries(config)) {
         if (value === undefined) {

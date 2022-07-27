@@ -29,9 +29,6 @@ arguments:
 
 
 
-Documentation can be found at https://nodejs.org/
-
-
 `;
 exports.default = async (cmd) => {
     if (!cmd)

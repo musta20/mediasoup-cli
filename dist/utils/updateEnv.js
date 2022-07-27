@@ -22,7 +22,7 @@ const setEnvValue = async (key, value) => {
         envVars.splice(targetLineIndex, 1, `${key}=${value}`);
     }
     else {
-        envVars.push(`${key}="${value}"`);
+        envVars.push(`${key}=${value}`);
     }
     try {
         fs_1.default.writeFileSync(envFilePath, envVars.join(os_1.default.EOL), {

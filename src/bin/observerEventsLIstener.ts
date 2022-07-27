@@ -25,7 +25,6 @@ import {
   transports,
   webRtcServers,
   workers,
-
 } from "./store";
 
 import {
@@ -33,6 +32,7 @@ import {
   InterServerEvents,
   ServerToClientEvents,
   SocketData,
+  observerObtion,
 } from "../utils/types";
 import { Server } from "socket.io";
 
@@ -55,58 +55,71 @@ import {
   logWebrtcServer,
   logWorkers,
 } from "../utils/liveLogger";
-import chalk from "chalk";
+
 import { getEnvValue, setEnvValue } from "../utils/updateEnv";
 
 import config from "../config";
 
 
-//const buf = Buffer.from('MEDIA_SOUP_CLI_PORT=5462')
-//dotev.parse(buf)
-//process.env['MEDIA_SOUP_CLI_PORT'] = '5462';
+exports.observer = (
+  { observer }: { observer: EnhancedEventEmitter<ObserverEvents> },
+  optionParam: observerObtion
+) => {
 
-//process.env.MEDIA_SOUP_CLI_PORT='5462'
-console.log(chalk.blueBright(getEnvValue('MEDIA_SOUP_CLI_PORT')));
-setEnvValue('MEDIA_SOUP_CLI_PORT', 6525)
-
-const env = config()
-const MEDIA_SOUP_CLI_PORT = env.MEDIA_SOUP_CLI_PORT
-console.log(MEDIA_SOUP_CLI_PORT)
-//parseInt(process.env.MEDIA_SOUP_CLI_PORT as string)
-
-const io = new Server<
+  const io = new Server<
   ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,
   SocketData
 >();
-const startCliServer = async () => {
-  io.on("connection", (socket) => {
-    socket.on("requestLog", (name , id) => {
-      socket.join("log");
-      activeLog(io,name,id);
+
+
+  
+  const startCliServer = async () => {
+    io.on("connection", (socket) => {
+      socket.on("requestLog", (name, id) => {
+        socket.join("log");
+        activeLog(io, name, id);
+      });
+
+      consumersResolver(socket);
+      producerResolver(socket);
+      DataConsumersResolver(socket);
+      DataProducerResolver(socket);
+      TansportsResolver(socket);
+      WebRtcResolver(socket);
+      WorkerResolver(socket);
+      RouterResolver(socket);
     });
 
-    consumersResolver(socket);
-    producerResolver(socket);
-    DataConsumersResolver(socket);
-    DataProducerResolver(socket);
-    TansportsResolver(socket);
-    WebRtcResolver(socket);
-    WorkerResolver(socket);
-    RouterResolver(socket);
-  });
 
-  io.listen(MEDIA_SOUP_CLI_PORT as number);
-};
+    const env = config();
+    const MEDIA_SOUP_CLI_PORT = env.MEDIA_SOUP_CLI_PORT;
+  
 
-startCliServer();
+    io.listen(MEDIA_SOUP_CLI_PORT as number);
+  };
 
-exports.observer = ({
-  observer,
-}: {
-  observer: EnhancedEventEmitter<ObserverEvents>;
-}) =>
+
+
+  if (optionParam?.PORT) {
+    const currentPort = parseInt(getEnvValue("MEDIA_SOUP_CLI_PORT") as string);
+
+    const newtPort =
+      typeof optionParam.PORT === "string"
+        ? parseInt(optionParam.PORT)
+        : optionParam.PORT;
+
+    if (currentPort !== newtPort && newtPort !== 0) {
+      console.log(newtPort)
+
+      setEnvValue("MEDIA_SOUP_CLI_PORT", newtPort);
+    }
+  }
+  startCliServer();
+
+
+
   observer.on(NEW_WORKER_EVENT, (worker: Worker) => {
     workers.push({ worker, routers: [], webRtcServer: [] });
     logWorkers(io);
@@ -127,16 +140,14 @@ exports.observer = ({
       logRouters(io);
 
       router.observer.on(CLOSE_EVENT, () => {
+        const Index = routers.findIndex((ro) => ro.id === router.id);
 
-
-      const Index = routers.findIndex((ro) => ro.id === router.id);
-        
         routers.splice(Index, 1);
 
         const routerObjIndex = routersOvject.findIndex(
           (r) => r.router.id === router.id
         );
-        removeWorkerItem(worker.pid,router.id)
+        removeWorkerItem(worker.pid, router.id);
 
         routersOvject.splice(routerObjIndex, 1);
 
@@ -234,8 +245,7 @@ exports.observer = ({
           );
           TransporObject[transportObjectIndex].dataProducer.push(dataProducer);
 
-  
-        logdataProducers(io)
+          logdataProducers(io);
           dataProducer.observer.on(CLOSE_EVENT, () => {
             const dataProducerIndex = dataProducers.findIndex(
               (d) => d.id === dataProducer.id
@@ -244,7 +254,7 @@ exports.observer = ({
 
             removeTranspotItem(transport.id, dataProducer.id, "dataProducer");
 
-        logdataProducers(io)
+            logdataProducers(io);
           });
         });
 
@@ -256,7 +266,7 @@ exports.observer = ({
           );
           TransporObject[transportObjectIndex].dataConsumer.push(dataConsumer);
 
-          logdataConsumers(io)
+          logdataConsumers(io);
           dataConsumer.observer.on(CLOSE_EVENT, () => {
             const dataConsumerIndex = dataConsumers.findIndex(
               (d) => d.id === dataConsumer.id
@@ -265,8 +275,7 @@ exports.observer = ({
 
             removeTranspotItem(transport.id, dataConsumer.id, "dataConsumer");
 
-            logdataConsumers(io)
-
+            logdataConsumers(io);
           });
         });
       });
@@ -278,8 +287,7 @@ exports.observer = ({
 
       workers?.[workerIndex]?.webRtcServer.push(webRtcServer);
 
-
-      logWebrtcServer(io)
+      logWebrtcServer(io);
       webRtcServer.observer.on(CLOSE_EVENT, () => {
         const webRtcServerIndexItem = webRtcServers.findIndex(
           (w) => w.id === webRtcServer.id
@@ -294,8 +302,8 @@ exports.observer = ({
 
         workers?.[workerIndex]?.webRtcServer.splice(webRtcServerIndex, 1);
 
-        logWebrtcServer(io)
-
+        logWebrtcServer(io);
       });
     });
   });
+};

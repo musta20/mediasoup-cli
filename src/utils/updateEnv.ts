@@ -41,13 +41,10 @@ export const setEnvValue = async (key:string, value:string | Number) => {
 
   } else {
     // create new key value
-    envVars.push(`${key}="${value}"`);
+    envVars.push(`${key}=${value}`);
   }
 
  
-
-  // write everything back to the file system
- //await fs.writeFileSync(envFilePath, envVars.join(os.EOL));
  try{
 
   fs.writeFileSync(envFilePath, envVars.join(os.EOL), {
@@ -59,7 +56,6 @@ export const setEnvValue = async (key:string, value:string | Number) => {
 console.log(e)
  }
 
-//config.env
 };
 
  

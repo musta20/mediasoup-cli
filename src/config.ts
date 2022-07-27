@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
-dotenv.config({path:path.join(path.resolve(__dirname, ".."), "config.env")});
+
+
 interface ENV {
 
   MEDIA_SOUP_CLI_PORT: number | undefined;
@@ -14,7 +15,7 @@ interface Config {
 // Loading process.env as ENV interface
 
 const getConfig = (): ENV => {
-  console.log( process.env.MEDIA_SOUP_CLI_PORT)
+  //console.log( process.env.MEDIA_SOUP_CLI_PORT)
   return {
     MEDIA_SOUP_CLI_PORT: process.env.MEDIA_SOUP_CLI_PORT ? Number(process.env.MEDIA_SOUP_CLI_PORT) : undefined,
    
@@ -28,6 +29,8 @@ const getConfig = (): ENV => {
 // definition.
 
 const getSanitzedConfig = (): Config => {
+  dotenv.config({path:path.join(path.resolve(__dirname, ".."), "config.env")});
+
   const config = getConfig();
 
   for (const [key, value] of Object.entries(config)) {
@@ -39,6 +42,5 @@ const getSanitzedConfig = (): Config => {
 };
 
 
-//const sanitizedConfig = getSanitzedConfig(config);
 
 export default getSanitzedConfig;

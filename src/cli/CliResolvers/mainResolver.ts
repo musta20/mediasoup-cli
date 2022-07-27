@@ -28,9 +28,6 @@ arguments:
 
 
 
-Documentation can be found at https://nodejs.org/
-
-
 `;
 
 export default async (cmd: string | unknown) => {

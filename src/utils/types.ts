@@ -89,7 +89,9 @@ export type RouterItem = { router: Router; transport: Transport[] };
 export interface HeaderType {
   string: any[];
 }
-
+export interface observerObtion {
+  PORT:number | string | null
+}
 interface IndexType {
   [key: string]:
     | Transport
