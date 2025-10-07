@@ -798,10 +798,9 @@ namespace RTC
 
 		if (!consumers.empty())
 		{
-			// Cloned ref-counted packet that RtpStreamSend will store for as long as
-			// needed avoiding multiple allocations unless absolutely necessary.
-			// Clone only happens if needed.
-			std::shared_ptr<RTC::RtpPacket> sharedPacket;
+			// Clone the packet so it holds its own buffer, usable for future
+			// retransmissions.
+			std::shared_ptr<RTC::RtpPacket> sharedPacket(packet->Clone());
 
 			for (auto* consumer : consumers)
 			{
@@ -811,7 +810,7 @@ namespace RTC
 				if (!mid.empty())
 					packet->UpdateMid(mid);
 
-				consumer->SendRtpPacket(packet, sharedPacket);
+				consumer->SendRtpPacket(sharedPacket);
 			}
 		}
 

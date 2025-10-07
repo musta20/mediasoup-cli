@@ -532,7 +532,7 @@ namespace RTC
 		return desiredBitrate;
 	}
 
-	void SvcConsumer::SendRtpPacket(RTC::RtpPacket* packet, std::shared_ptr<RTC::RtpPacket>& sharedPacket)
+	void SvcConsumer::SendRtpPacket(std::shared_ptr<RTC::RtpPacket> packet)
 	{
 		MS_TRACE();
 
@@ -633,13 +633,13 @@ namespace RTC
 		}
 
 		// Process the packet.
-		if (this->rtpStream->ReceivePacket(packet, sharedPacket))
+		if (this->rtpStream->ReceivePacket(packet))
 		{
 			// Send the packet.
-			this->listener->OnConsumerSendRtpPacket(this, packet);
+			this->listener->OnConsumerSendRtpPacket(this, packet.get());
 
 			// May emit 'trace' event.
-			EmitTraceEventRtpAndKeyFrameTypes(packet);
+			EmitTraceEventRtpAndKeyFrameTypes(packet.get());
 		}
 		else
 		{

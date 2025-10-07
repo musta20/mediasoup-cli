@@ -184,7 +184,7 @@ namespace RTC
 		return 0u;
 	}
 
-	void PipeConsumer::SendRtpPacket(RTC::RtpPacket* packet, std::shared_ptr<RTC::RtpPacket>& sharedPacket)
+	void PipeConsumer::SendRtpPacket(std::shared_ptr<RTC::RtpPacket> packet)
 	{
 		MS_TRACE();
 
@@ -253,13 +253,13 @@ namespace RTC
 		}
 
 		// Process the packet.
-		if (rtpStream->ReceivePacket(packet, sharedPacket))
+		if (rtpStream->ReceivePacket(packet))
 		{
 			// Send the packet.
-			this->listener->OnConsumerSendRtpPacket(this, packet);
+			this->listener->OnConsumerSendRtpPacket(this, packet.get());
 
 			// May emit 'trace' event.
-			EmitTraceEventRtpAndKeyFrameTypes(packet);
+			EmitTraceEventRtpAndKeyFrameTypes(packet.get());
 		}
 		else
 		{
