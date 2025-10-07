@@ -1,56 +1,14 @@
-import { routers, routersObject, TransporObject, transports } from "../bin/store";
+import { store } from "../bin/MediaSoupStore";
+import { TransportAll } from "../utils/types";
 
-export const getTransportByRouterId= (id:string)=>{
+export const getTransportByRouterId = (id: string): string[] => {
+  return store.getTransportsByRouterId(id);
+};
 
-    const routerIndex = routers.findIndex(
-        (w) => w.id === id
-      );
-      
-      if(routerIndex < 0) return [];
-      
+export const getTransport = (): string[] => {
+  return store.getTransportIds();
+};
 
-     return   routersObject[routerIndex]?.transport?.map((r) => {
-          return r.id;
-        })
-      
-  
-}
-
-export const getTransport =()=>{
-  return  transports.map((r) => {
-        return r.id;
-      })
-}
-
-export const getAllTransport = (id : string)=>{
-
-  const transportObjectIndex = TransporObject.findIndex(t=>t.transport.id==id)
-  
-  const consumersOfTransport = TransporObject[transportObjectIndex]?.consumer ?.map(c=>{
-    return c.id
-  })
-
-  const producersOfTransport = TransporObject[transportObjectIndex]?.producer?.map(p=>{
-    return p.id
-  })
-
-
-
-  const dataproducersOfTransport = TransporObject[transportObjectIndex]?.dataProducer?.map(p=>{
-    return p.id
-  })
-
-
-  const dataconsumersOfTransport = TransporObject[transportObjectIndex]?.dataConsumer?.map(p=>{
-    return p.id
-  })
-
-  return {
-    
-      consumers:consumersOfTransport,
-      producers:producersOfTransport,
-      dataConsumer:dataconsumersOfTransport,
-      dataProducer:dataproducersOfTransport
-    
-  }
-}
+export const getAllTransport = (id: string): TransportAll => {
+  return store.getAllTransportContent(id);
+};

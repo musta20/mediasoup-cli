@@ -1,23 +1,9 @@
-import {  dataConsumers, TransporObject } from "../bin/store";
+import { store } from "../bin/MediaSoupStore";
 
-export const getDataConsumerById = (id:string)=>{
+export const getDataConsumerById = (id: string): string[] => {
+  return store.getDataConsumersByTransportId(id);
+};
 
-    const transportIndex = TransporObject.findIndex(
-        (w) => w.transport.id === id
-      );
-      
-      if(transportIndex < 0) return [];
-      
-
-     return   TransporObject[transportIndex]?.dataConsumer?.map((r) => {
-          return r.id;
-        })
-      
-  
-}
-
-export const getDataConsumer =()=>{
-  return  dataConsumers.map((r) => {
-        return r.id;
-      })
-}
+export const getDataConsumer = (): string[] => {
+  return store.getDataConsumerIds();
+};

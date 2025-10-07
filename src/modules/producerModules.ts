@@ -1,23 +1,9 @@
-import {  producers, TransporObject } from "../bin/store";
+import { store } from "../bin/MediaSoupStore";
 
-export const getProducerById = (id:string)=>{
+export const getProducerById = (id: string): string[] => {
+  return store.getProducersByTransportId(id);
+};
 
-    const transportIndex = TransporObject.findIndex(
-        (w) => w.transport.id === id
-      );
-      
-      if(transportIndex < 0) return [];
-      
-
-     return   TransporObject[transportIndex]?.producer?.map((r) => {
-          return r.id;
-        })
-      
-  
-}
-
-export const getProducer =()=>{
-  return  producers.map((r) => {
-        return r.id;
-      })
-}
+export const getProducer = (): string[] => {
+  return store.getProducerIds();
+};
