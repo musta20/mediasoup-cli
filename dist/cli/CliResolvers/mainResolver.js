@@ -80,7 +80,7 @@ exports.default = async (cmd) => {
                 (0, WebRtcServer_1.default)(parsed);
                 break;
             default:
-                console.log(chalk_1.default.yellowBright(`unkonwn command ${parsed[1]}`));
+                console.log(chalk_1.default.yellowBright(`unknown command ${parsed[1]}`));
                 break;
         }
 };

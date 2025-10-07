@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TransporObject = exports.webRtcServers = exports.dataProducers = exports.dataConsumers = exports.consumers = exports.producers = exports.transports = exports.routersOvject = exports.routers = exports.workers = exports.addTranspotItem = exports.removeTranspotItem = exports.removeRouterItem = exports.addRouterItem = exports.removeWorkerItem = exports.addWorkerItem = exports.loggerOption = exports.CLOSE_EVENT = exports.NEW_WEBRTC_SERVER = exports.NEW_DATA_CONSUMER_EVENT = exports.NEW_DATA_PRODUCER_EVENT = exports.NEW_CONSUMER_EVENT = exports.NEW_PRODUCER_EVENT = exports.NEW_TRANSPORT_EVENT = exports.NEW_ROUTER_EVENT = exports.NEW_WORKER_EVENT = void 0;
+exports.TransporObject = exports.webRtcServers = exports.dataProducers = exports.dataConsumers = exports.consumers = exports.producers = exports.transports = exports.routersObject = exports.routers = exports.workers = exports.addTranspotItem = exports.removeTranspotItem = exports.removeRouterItem = exports.addRouterItem = exports.removeWorkerItem = exports.addWorkerItem = exports.loggerOption = exports.CLOSE_EVENT = exports.NEW_WEBRTC_SERVER = exports.NEW_DATA_CONSUMER_EVENT = exports.NEW_DATA_PRODUCER_EVENT = exports.NEW_CONSUMER_EVENT = exports.NEW_PRODUCER_EVENT = exports.NEW_TRANSPORT_EVENT = exports.NEW_ROUTER_EVENT = exports.NEW_WORKER_EVENT = void 0;
 const workers = [];
 exports.workers = workers;
 const routers = [];
 exports.routers = routers;
-const routersOvject = [];
-exports.routersOvject = routersOvject;
+const routersObject = [];
+exports.routersObject = routersObject;
 const TransporObject = [];
 exports.TransporObject = TransporObject;
 const transports = [];
@@ -53,14 +53,14 @@ const addTranspotItem = (transportIndex, itemIndex, type) => {
 };
 exports.addTranspotItem = addTranspotItem;
 const removeRouterItem = (routerIndex, itemIndex) => {
-    const indexObject = routersOvject.findIndex((t) => t.router.id === routerIndex);
-    const transportIndex = routersOvject[indexObject].transport.findIndex((item) => item.id === itemIndex);
-    routersOvject[indexObject].transport.splice(transportIndex, 1);
+    const indexObject = routersObject.findIndex((t) => t.router.id === routerIndex);
+    const transportIndex = routersObject[indexObject].transport.findIndex((item) => item.id === itemIndex);
+    routersObject[indexObject].transport.splice(transportIndex, 1);
 };
 exports.removeRouterItem = removeRouterItem;
 const addRouterItem = (routerIndex, transportItem) => {
-    const indexObject = routersOvject.findIndex((t) => t.router.id === routerIndex);
-    routersOvject[indexObject].transport.push(transportItem);
+    const indexObject = routersObject.findIndex((t) => t.router.id === routerIndex);
+    routersObject[indexObject].transport.push(transportItem);
 };
 exports.addRouterItem = addRouterItem;
 const removeWorkerItem = (workerIndex, routerIndex) => {
@@ -70,7 +70,7 @@ const removeWorkerItem = (workerIndex, routerIndex) => {
 };
 exports.removeWorkerItem = removeWorkerItem;
 const addWorkerItem = (routerIndex, transportItem) => {
-    const indexObject = routersOvject.findIndex((t) => t.router.id === routerIndex);
-    routersOvject[indexObject].transport.push(transportItem);
+    const indexObject = routersObject.findIndex((t) => t.router.id === routerIndex);
+    routersObject[indexObject].transport.push(transportItem);
 };
 exports.addWorkerItem = addWorkerItem;

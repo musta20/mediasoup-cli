@@ -20,7 +20,7 @@ import {
   removeTranspotItem,
   removeWorkerItem,
   routers,
-  routersOvject,
+  routersObject,
   TransporObject,
   transports,
   webRtcServers,
@@ -40,7 +40,7 @@ import consumersResolver from "../Resolvers/ConsumersResolver";
 import producerResolver from "../Resolvers/ProducerResolver";
 import DataConsumersResolver from "../Resolvers/DataConsumersResolver";
 import DataProducerResolver from "../Resolvers/DataProducerResolver";
-import TansportsResolver from "../Resolvers/TansportsResolver";
+import TransportsResolver from "../Resolvers/TransportsResolver";
 import WebRtcResolver from "../Resolvers/WebRtcResolver";
 import WorkerResolver from "../Resolvers/WorkerResolver";
 import RouterResolver from "../Resolvers/RouterResolver";
@@ -86,7 +86,7 @@ exports.observer = (
       producerResolver(socket);
       DataConsumersResolver(socket);
       DataProducerResolver(socket);
-      TansportsResolver(socket);
+      TransportsResolver(socket);
       WebRtcResolver(socket);
       WorkerResolver(socket);
       RouterResolver(socket);
@@ -132,7 +132,7 @@ exports.observer = (
 
     worker.observer.on(NEW_ROUTER_EVENT, (router) => {
       routers.push(router);
-      routersOvject.push({ router: router, transport: [] });
+      routersObject.push({ router: router, transport: [] });
 
       const workerIndex = workers.findIndex((w) => w.worker.pid === worker.pid);
 
@@ -144,12 +144,12 @@ exports.observer = (
 
         routers.splice(Index, 1);
 
-        const routerObjIndex = routersOvject.findIndex(
+        const routerObjIndex = routersObject.findIndex(
           (r) => r.router.id === router.id
         );
         removeWorkerItem(worker.pid, router.id);
 
-        routersOvject.splice(routerObjIndex, 1);
+        routersObject.splice(routerObjIndex, 1);
 
         logRouters(io);
       });
@@ -157,11 +157,11 @@ exports.observer = (
       router.observer.on(NEW_TRANSPORT_EVENT, (transport) => {
         transports.push(transport);
 
-        const routerIndex = routersOvject.findIndex(
+        const routerIndex = routersObject.findIndex(
           (r) => r.router.id === router.id
         );
 
-        routersOvject?.[routerIndex]?.transport.push(transport);
+        routersObject?.[routerIndex]?.transport.push(transport);
 
         TransporObject.push({
           transport: transport,
@@ -174,15 +174,15 @@ exports.observer = (
         logTransport(io);
 
         transport.observer.on(CLOSE_EVENT, () => {
-          const routerIndex = routersOvject.findIndex(
+          const routerIndex = routersObject.findIndex(
             (r) => r.router.id === router.id
           );
 
-          const transportindex = routersOvject?.[
+          const transportindex = routersObject?.[
             routerIndex
           ]?.transport.findIndex((t) => t.id === transport.id);
 
-          routersOvject?.[routerIndex]?.transport.splice(transportindex, 1);
+          routersObject?.[routerIndex]?.transport.splice(transportindex, 1);
 
           const Index = transports.findIndex((tr) => tr.id === transport.id);
           transports.splice(Index, 1);

@@ -7,7 +7,7 @@ const getTransportByRouterId = (id) => {
     const routerIndex = store_1.routers.findIndex((w) => w.id === id);
     if (routerIndex < 0)
         return [];
-    return (_b = (_a = store_1.routersOvject[routerIndex]) === null || _a === void 0 ? void 0 : _a.transport) === null || _b === void 0 ? void 0 : _b.map((r) => {
+    return (_b = (_a = store_1.routersObject[routerIndex]) === null || _a === void 0 ? void 0 : _a.transport) === null || _b === void 0 ? void 0 : _b.map((r) => {
         return r.id;
     });
 };

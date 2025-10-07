@@ -1,4 +1,4 @@
-import { routers, routersOvject, TransporObject, transports } from "../bin/store";
+import { routers, routersObject, TransporObject, transports } from "../bin/store";
 
 export const getTransportByRouterId= (id:string)=>{
 
@@ -9,7 +9,7 @@ export const getTransportByRouterId= (id:string)=>{
       if(routerIndex < 0) return [];
       
 
-     return   routersOvject[routerIndex]?.transport?.map((r) => {
+     return   routersObject[routerIndex]?.transport?.map((r) => {
           return r.id;
         })
       

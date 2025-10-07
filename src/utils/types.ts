@@ -101,13 +101,13 @@ interface IndexType {
     | DataProducer[];
 }
 
-export type trnasportArrays =
+export type transportArrays =
   | DataProducer[]
   | DataConsumer[]
   | Producer[]
   | Consumer[];
 
-export type trnasportArraysItem =
+export type transportArraysItem =
   | []
   | DataProducer
   | DataConsumer

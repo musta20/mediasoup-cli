@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { getDataProducer, getDataProducerById } from "../modules/dataProducerModules ";
+import { getDataProducer, getDataProducerById } from "../modules/dataProducerModules";
 
 
 export default (socket: Socket) => {

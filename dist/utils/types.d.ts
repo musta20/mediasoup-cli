@@ -64,8 +64,8 @@ export interface observerObtion {
 interface IndexType {
     [key: string]: Transport | Producer[] | Consumer[] | DataConsumer[] | DataProducer[];
 }
-export declare type trnasportArrays = DataProducer[] | DataConsumer[] | Producer[] | Consumer[];
-export declare type trnasportArraysItem = [] | DataProducer | DataConsumer | Producer | Consumer;
+export declare type transportArrays = DataProducer[] | DataConsumer[] | Producer[] | Consumer[];
+export declare type transportArraysItem = [] | DataProducer | DataConsumer | Producer | Consumer;
 export interface TransportItem extends IndexType {
     transport: Transport;
     producer: Producer[];

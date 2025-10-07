@@ -91,7 +91,7 @@ export default async (cmd: string | unknown) => {
 
         break;
       default:
-        console.log(chalk.yellowBright(`unkonwn command ${parsed[1]}`));
+        console.log(chalk.yellowBright(`unknown command ${parsed[1]}`));
         break;
     }
 };

@@ -7,8 +7,8 @@ import { Transport } from "mediasoup/node/lib/Transport";
 import {
   RouterItem,
   TransportItem,
-  trnasportArrays,
-  trnasportArraysItem,
+  transportArrays,
+  transportArraysItem,
   WorkerItem,
 } from "../utils/types";
 import { WebRtcServer } from "mediasoup/node/lib/WebRtcServer";
@@ -17,7 +17,7 @@ const workers: WorkerItem[] = [];
 
 const routers: Router[] = [];
 
-const routersOvject: RouterItem[] = [];
+const routersObject: RouterItem[] = [];
 
 const TransporObject: TransportItem[] = [];
 
@@ -70,10 +70,10 @@ const removeTranspotItem = (
 
   if (typeof TransporObject[indexObject][type] !== "object") {
     const itemtypeIndex = (
-      TransporObject[indexObject][type] as trnasportArrays
+      TransporObject[indexObject][type] as transportArrays
     ).findIndex((item) => item.id === itemIndex);
 
-    (TransporObject[indexObject][type] as trnasportArrays).splice(
+    (TransporObject[indexObject][type] as transportArrays).splice(
       itemtypeIndex,
       1
     );
@@ -82,7 +82,7 @@ const removeTranspotItem = (
 
 const addTranspotItem = (
   transportIndex: string,
-  itemIndex: trnasportArraysItem,
+  itemIndex: transportArraysItem,
   type: string
 ) => {
   const indexObject = TransporObject.findIndex(
@@ -95,23 +95,23 @@ const addTranspotItem = (
 };
 
 const removeRouterItem = (routerIndex: string, itemIndex: string) => {
-  const indexObject = routersOvject.findIndex(
+  const indexObject = routersObject.findIndex(
     (t) => t.router.id === routerIndex
   );
 
-  const transportIndex = routersOvject[indexObject].transport.findIndex(
+  const transportIndex = routersObject[indexObject].transport.findIndex(
     (item) => item.id === itemIndex
   );
 
-  routersOvject[indexObject].transport.splice(transportIndex, 1);
+  routersObject[indexObject].transport.splice(transportIndex, 1);
 };
 
 const addRouterItem = (routerIndex: string, transportItem: Transport) => {
-  const indexObject = routersOvject.findIndex(
+  const indexObject = routersObject.findIndex(
     (t) => t.router.id === routerIndex
   );
 
-  routersOvject[indexObject].transport.push(transportItem);
+  routersObject[indexObject].transport.push(transportItem);
 };
 
 const removeWorkerItem = (workerIndex: number, routerIndex: string) => {
@@ -127,11 +127,11 @@ const removeWorkerItem = (workerIndex: number, routerIndex: string) => {
 };
 
 const addWorkerItem = (routerIndex: string, transportItem: Transport) => {
-  const indexObject = routersOvject.findIndex(
+  const indexObject = routersObject.findIndex(
     (t) => t.router.id === routerIndex
   );
 
-  routersOvject[indexObject].transport.push(transportItem);
+  routersObject[indexObject].transport.push(transportItem);
 };
 
 export {
@@ -143,7 +143,7 @@ export {
   addTranspotItem,
   workers,
   routers,
-  routersOvject,
+  routersObject,
   transports,
   producers,
   consumers,

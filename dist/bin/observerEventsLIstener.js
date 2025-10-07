@@ -10,7 +10,7 @@ const ConsumersResolver_1 = __importDefault(require("../Resolvers/ConsumersResol
 const ProducerResolver_1 = __importDefault(require("../Resolvers/ProducerResolver"));
 const DataConsumersResolver_1 = __importDefault(require("../Resolvers/DataConsumersResolver"));
 const DataProducerResolver_1 = __importDefault(require("../Resolvers/DataProducerResolver"));
-const TansportsResolver_1 = __importDefault(require("../Resolvers/TansportsResolver"));
+const TransportsResolver_1 = __importDefault(require("../Resolvers/TransportsResolver"));
 const WebRtcResolver_1 = __importDefault(require("../Resolvers/WebRtcResolver"));
 const WorkerResolver_1 = __importDefault(require("../Resolvers/WorkerResolver"));
 const RouterResolver_1 = __importDefault(require("../Resolvers/RouterResolver"));
@@ -29,7 +29,7 @@ exports.observer = ({ observer }, optionParam) => {
             (0, ProducerResolver_1.default)(socket);
             (0, DataConsumersResolver_1.default)(socket);
             (0, DataProducerResolver_1.default)(socket);
-            (0, TansportsResolver_1.default)(socket);
+            (0, TransportsResolver_1.default)(socket);
             (0, WebRtcResolver_1.default)(socket);
             (0, WorkerResolver_1.default)(socket);
             (0, RouterResolver_1.default)(socket);
@@ -60,23 +60,23 @@ exports.observer = ({ observer }, optionParam) => {
         worker.observer.on(store_1.NEW_ROUTER_EVENT, (router) => {
             var _a;
             store_1.routers.push(router);
-            store_1.routersOvject.push({ router: router, transport: [] });
+            store_1.routersObject.push({ router: router, transport: [] });
             const workerIndex = store_1.workers.findIndex((w) => w.worker.pid === worker.pid);
             (_a = store_1.workers === null || store_1.workers === void 0 ? void 0 : store_1.workers[workerIndex]) === null || _a === void 0 ? void 0 : _a.routers.push(router);
             (0, liveLogger_1.logRouters)(io);
             router.observer.on(store_1.CLOSE_EVENT, () => {
                 const Index = store_1.routers.findIndex((ro) => ro.id === router.id);
                 store_1.routers.splice(Index, 1);
-                const routerObjIndex = store_1.routersOvject.findIndex((r) => r.router.id === router.id);
+                const routerObjIndex = store_1.routersObject.findIndex((r) => r.router.id === router.id);
                 (0, store_1.removeWorkerItem)(worker.pid, router.id);
-                store_1.routersOvject.splice(routerObjIndex, 1);
+                store_1.routersObject.splice(routerObjIndex, 1);
                 (0, liveLogger_1.logRouters)(io);
             });
             router.observer.on(store_1.NEW_TRANSPORT_EVENT, (transport) => {
                 var _a;
                 store_1.transports.push(transport);
-                const routerIndex = store_1.routersOvject.findIndex((r) => r.router.id === router.id);
-                (_a = store_1.routersOvject === null || store_1.routersOvject === void 0 ? void 0 : store_1.routersOvject[routerIndex]) === null || _a === void 0 ? void 0 : _a.transport.push(transport);
+                const routerIndex = store_1.routersObject.findIndex((r) => r.router.id === router.id);
+                (_a = store_1.routersObject === null || store_1.routersObject === void 0 ? void 0 : store_1.routersObject[routerIndex]) === null || _a === void 0 ? void 0 : _a.transport.push(transport);
                 store_1.TransporObject.push({
                     transport: transport,
                     consumer: [],
@@ -87,9 +87,9 @@ exports.observer = ({ observer }, optionParam) => {
                 (0, liveLogger_1.logTransport)(io);
                 transport.observer.on(store_1.CLOSE_EVENT, () => {
                     var _a, _b;
-                    const routerIndex = store_1.routersOvject.findIndex((r) => r.router.id === router.id);
-                    const transportindex = (_a = store_1.routersOvject === null || store_1.routersOvject === void 0 ? void 0 : store_1.routersOvject[routerIndex]) === null || _a === void 0 ? void 0 : _a.transport.findIndex((t) => t.id === transport.id);
-                    (_b = store_1.routersOvject === null || store_1.routersOvject === void 0 ? void 0 : store_1.routersOvject[routerIndex]) === null || _b === void 0 ? void 0 : _b.transport.splice(transportindex, 1);
+                    const routerIndex = store_1.routersObject.findIndex((r) => r.router.id === router.id);
+                    const transportindex = (_a = store_1.routersObject === null || store_1.routersObject === void 0 ? void 0 : store_1.routersObject[routerIndex]) === null || _a === void 0 ? void 0 : _a.transport.findIndex((t) => t.id === transport.id);
+                    (_b = store_1.routersObject === null || store_1.routersObject === void 0 ? void 0 : store_1.routersObject[routerIndex]) === null || _b === void 0 ? void 0 : _b.transport.splice(transportindex, 1);
                     const Index = store_1.transports.findIndex((tr) => tr.id === transport.id);
                     store_1.transports.splice(Index, 1);
                     const transportObjectIndex = store_1.TransporObject.findIndex((t) => t.transport.id === transport.id);
