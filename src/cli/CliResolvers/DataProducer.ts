@@ -61,7 +61,7 @@ export default async (parsed: string[]) => {
         logger(chalk.yellowBright(`DataProducers count :${data.length}`));
 
       
-        printTable(chalk.yellowBright("dataConsumer"), data);
+        printTable(chalk.yellowBright("dataProducer"), data);
 
       });
       break;

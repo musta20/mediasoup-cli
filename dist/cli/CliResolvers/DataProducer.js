@@ -39,7 +39,7 @@ exports.default = async (parsed) => {
                 if ((data === null || data === void 0 ? void 0 : data.length) === 0 || !data)
                     return (0, logger_1.default)(chalk_1.default.yellowBright("no DataProducers available"));
                 (0, logger_1.default)(chalk_1.default.yellowBright(`DataProducers count :${data.length}`));
-                (0, printTable_1.default)(chalk_1.default.yellowBright("dataConsumer"), data);
+                (0, printTable_1.default)(chalk_1.default.yellowBright("dataProducer"), data);
             });
             break;
         default:

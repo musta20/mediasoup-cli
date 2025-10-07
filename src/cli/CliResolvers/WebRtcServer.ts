@@ -12,7 +12,7 @@ export default async (parsed: string[]) => {
 
           if (webrtcServer?.length === 0 || !webrtcServer )return logger(chalk.yellowBright("no webrtcServer available"));
 
-          chalk.yellowBright(`webrtcServer count :${webrtcServer.length}`);
+          logger(chalk.yellowBright(`webrtcServer count :${webrtcServer.length}`));
 
           printTable(  chalk.yellowBright(`worker id: ${parsed?.[3]}`), webrtcServer);
 
@@ -25,7 +25,7 @@ export default async (parsed: string[]) => {
 
         if (WebrtcServer?.length === 0 || !WebrtcServer)return logger(chalk.yellowBright("no webrtcServer available"));
 
-        chalk.yellowBright(`webrtcServer count :${WebrtcServer.length}`);
+        logger(chalk.yellowBright(`webrtcServer count :${WebrtcServer.length}`));
 
 
         printTable(`WebrtcServer`, WebrtcServer);
@@ -36,26 +36,26 @@ export default async (parsed: string[]) => {
       case "watch":
         if (parsed?.[2] && parsed?.[3]) {
 
-          socket.emit("requestLog", "getWorkers", parsed?.[3]);
+          socket.emit("requestLog", "webrtcserver", parsed?.[3]);
 
         }else{
-          socket.emit("requestLog", "getWorkers",0);
+          socket.emit("requestLog", "webrtcserver",0);
 
         }
 
-        logger(chalk.yellowBright(`webrtcservr live logs:`))
+        logger(chalk.yellowBright(`webrtcserver live logs:`))
 
-        socket.on("logWorkers", (data) => {
+        socket.on("logWebrtcServer", (data) => {
 
           console.clear();
 
-          if (data?.length === 0 || !data)  return logger(chalk.yellowBright("no workers available"));
-  
-          logger(chalk.yellowBright(`workers count :${data.length}`));
-  
-       
-          printTable(chalk.yellowBright("worker"), data);
-          
+          if (data?.length === 0 || !data)  return logger(chalk.yellowBright("no webrtcServer available"));
+
+          logger(chalk.yellowBright(`webrtcServer count :${data.length}`));
+
+
+          printTable(chalk.yellowBright("webrtcServer"), data);
+
         });
         break;
 
