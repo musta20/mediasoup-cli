@@ -18,8 +18,8 @@ export interface ServerToClientEvents {
     logTransportsID: (data: string[]) => void;
     logRouterID: (data: string[]) => void;
 }
-declare type callbackWithParam = (Id: string, callback: (data: string[]) => void) => void;
-declare type callbackWithNoParam = (callback: (data: string[]) => void) => void;
+type callbackWithParam = (Id: string, callback: (data: string[]) => void) => void;
+type callbackWithNoParam = (callback: (data: string[]) => void) => void;
 export interface ClientToServerEvents {
     getRoutersByWorkerId: callbackWithParam;
     getTansportsByRouterId: callbackWithParam;
@@ -46,12 +46,12 @@ export interface SocketData {
     name: string;
     age: number;
 }
-export declare type WorkerItem = {
+export type WorkerItem = {
     worker: Worker;
     routers: Router[];
     webRtcServer: WebRtcServer[];
 };
-export declare type RouterItem = {
+export type RouterItem = {
     router: Router;
     transport: Transport[];
 };
@@ -64,8 +64,8 @@ export interface observerObtion {
 interface IndexType {
     [key: string]: Transport | Producer[] | Consumer[] | DataConsumer[] | DataProducer[];
 }
-export declare type transportArrays = DataProducer[] | DataConsumer[] | Producer[] | Consumer[];
-export declare type transportArraysItem = [] | DataProducer | DataConsumer | Producer | Consumer;
+export type transportArrays = DataProducer[] | DataConsumer[] | Producer[] | Consumer[];
+export type transportArraysItem = [] | DataProducer | DataConsumer | Producer | Consumer;
 export interface TransportItem extends IndexType {
     transport: Transport;
     producer: Producer[];
@@ -73,7 +73,7 @@ export interface TransportItem extends IndexType {
     dataConsumer: DataConsumer[];
     dataProducer: DataProducer[];
 }
-export declare type TransportAll = {
+export type TransportAll = {
     consumers: string[];
     producers: string[];
     dataConsumer: string[];
