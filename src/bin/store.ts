@@ -68,15 +68,21 @@ const removeTranspotItem = (
     (t) => t.transport.id === transportIndex
   );
 
-  if (typeof TransporObject[indexObject][type] !== "object") {
+  if (indexObject === -1) {
+    return;
+  }
+
+  if (typeof TransporObject[indexObject][type] === "object") {
     const itemtypeIndex = (
       TransporObject[indexObject][type] as transportArrays
     ).findIndex((item) => item.id === itemIndex);
 
-    (TransporObject[indexObject][type] as transportArrays).splice(
-      itemtypeIndex,
-      1
-    );
+    if (itemtypeIndex !== -1) {
+      (TransporObject[indexObject][type] as transportArrays).splice(
+        itemtypeIndex,
+        1
+      );
+    }
   }
 };
 
@@ -89,7 +95,11 @@ const addTranspotItem = (
     (t) => t.transport.id === transportIndex
   );
 
-  if (typeof TransporObject[indexObject][type] !== "object") {
+  if (indexObject === -1) {
+    return;
+  }
+
+  if (typeof TransporObject[indexObject][type] === "object") {
     (TransporObject[indexObject][type] as any[]).push(itemIndex);
   }
 };
@@ -99,11 +109,17 @@ const removeRouterItem = (routerIndex: string, itemIndex: string) => {
     (t) => t.router.id === routerIndex
   );
 
+  if (indexObject === -1) {
+    return;
+  }
+
   const transportIndex = routersObject[indexObject].transport.findIndex(
     (item) => item.id === itemIndex
   );
 
-  routersObject[indexObject].transport.splice(transportIndex, 1);
+  if (transportIndex !== -1) {
+    routersObject[indexObject].transport.splice(transportIndex, 1);
+  }
 };
 
 const addRouterItem = (routerIndex: string, transportItem: Transport) => {
@@ -111,7 +127,9 @@ const addRouterItem = (routerIndex: string, transportItem: Transport) => {
     (t) => t.router.id === routerIndex
   );
 
-  routersObject[indexObject].transport.push(transportItem);
+  if (indexObject !== -1) {
+    routersObject[indexObject].transport.push(transportItem);
+  }
 };
 
 const removeWorkerItem = (workerIndex: number, routerIndex: string) => {
@@ -119,11 +137,17 @@ const removeWorkerItem = (workerIndex: number, routerIndex: string) => {
     (t) => t.worker.pid == workerIndex
   );
 
+  if (indexworker === -1) {
+    return;
+  }
+
   const routerWorkerIndex = workers[indexworker].routers.findIndex(
     (item) => item.id === routerIndex
   );
 
-  workers[indexworker].routers.splice(routerWorkerIndex, 1);
+  if (routerWorkerIndex !== -1) {
+    workers[indexworker].routers.splice(routerWorkerIndex, 1);
+  }
 };
 
 const addWorkerItem = (routerIndex: string, transportItem: Transport) => {
@@ -131,7 +155,9 @@ const addWorkerItem = (routerIndex: string, transportItem: Transport) => {
     (t) => t.router.id === routerIndex
   );
 
-  routersObject[indexObject].transport.push(transportItem);
+  if (indexObject !== -1) {
+    routersObject[indexObject].transport.push(transportItem);
+  }
 };
 
 export {

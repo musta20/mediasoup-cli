@@ -39,38 +39,60 @@ const dataProducers = [];
 exports.dataProducers = dataProducers;
 const removeTranspotItem = (transportIndex, itemIndex, type) => {
     const indexObject = TransporObject.findIndex((t) => t.transport.id === transportIndex);
-    if (typeof TransporObject[indexObject][type] !== "object") {
+    if (indexObject === -1) {
+        return;
+    }
+    if (typeof TransporObject[indexObject][type] === "object") {
         const itemtypeIndex = TransporObject[indexObject][type].findIndex((item) => item.id === itemIndex);
-        TransporObject[indexObject][type].splice(itemtypeIndex, 1);
+        if (itemtypeIndex !== -1) {
+            TransporObject[indexObject][type].splice(itemtypeIndex, 1);
+        }
     }
 };
 exports.removeTranspotItem = removeTranspotItem;
 const addTranspotItem = (transportIndex, itemIndex, type) => {
     const indexObject = TransporObject.findIndex((t) => t.transport.id === transportIndex);
-    if (typeof TransporObject[indexObject][type] !== "object") {
+    if (indexObject === -1) {
+        return;
+    }
+    if (typeof TransporObject[indexObject][type] === "object") {
         TransporObject[indexObject][type].push(itemIndex);
     }
 };
 exports.addTranspotItem = addTranspotItem;
 const removeRouterItem = (routerIndex, itemIndex) => {
     const indexObject = routersObject.findIndex((t) => t.router.id === routerIndex);
+    if (indexObject === -1) {
+        return;
+    }
     const transportIndex = routersObject[indexObject].transport.findIndex((item) => item.id === itemIndex);
-    routersObject[indexObject].transport.splice(transportIndex, 1);
+    if (transportIndex !== -1) {
+        routersObject[indexObject].transport.splice(transportIndex, 1);
+    }
 };
 exports.removeRouterItem = removeRouterItem;
 const addRouterItem = (routerIndex, transportItem) => {
     const indexObject = routersObject.findIndex((t) => t.router.id === routerIndex);
-    routersObject[indexObject].transport.push(transportItem);
+    if (indexObject !== -1) {
+        routersObject[indexObject].transport.push(transportItem);
+    }
 };
 exports.addRouterItem = addRouterItem;
 const removeWorkerItem = (workerIndex, routerIndex) => {
     const indexworker = workers.findIndex((t) => t.worker.pid == workerIndex);
+    if (indexworker === -1) {
+        return;
+    }
     const routerWorkerIndex = workers[indexworker].routers.findIndex((item) => item.id === routerIndex);
-    workers[indexworker].routers.splice(routerWorkerIndex, 1);
+    if (routerWorkerIndex !== -1) {
+        workers[indexworker].routers.splice(routerWorkerIndex, 1);
+    }
 };
 exports.removeWorkerItem = removeWorkerItem;
 const addWorkerItem = (routerIndex, transportItem) => {
     const indexObject = routersObject.findIndex((t) => t.router.id === routerIndex);
-    routersObject[indexObject].transport.push(transportItem);
+    if (indexObject !== -1) {
+        routersObject[indexObject].transport.push(transportItem);
+    }
 };
 exports.addWorkerItem = addWorkerItem;

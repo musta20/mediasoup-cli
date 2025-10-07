@@ -125,7 +125,9 @@ exports.observer = (
     logWorkers(io);
     worker.observer.on(CLOSE_EVENT, () => {
       const Index = workers.findIndex((w) => w.worker.pid === worker.pid);
-      workers.splice(Index, 1);
+      if (Index !== -1) {
+        workers.splice(Index, 1);
+      }
 
       logWorkers(io);
     });
@@ -142,14 +144,18 @@ exports.observer = (
       router.observer.on(CLOSE_EVENT, () => {
         const Index = routers.findIndex((ro) => ro.id === router.id);
 
-        routers.splice(Index, 1);
+        if (Index !== -1) {
+          routers.splice(Index, 1);
+        }
 
         const routerObjIndex = routersObject.findIndex(
           (r) => r.router.id === router.id
         );
         removeWorkerItem(worker.pid, router.id);
 
-        routersObject.splice(routerObjIndex, 1);
+        if (routerObjIndex !== -1) {
+          routersObject.splice(routerObjIndex, 1);
+        }
 
         logRouters(io);
       });
@@ -178,19 +184,25 @@ exports.observer = (
             (r) => r.router.id === router.id
           );
 
-          const transportindex = routersObject?.[
-            routerIndex
-          ]?.transport.findIndex((t) => t.id === transport.id);
+          if (routerIndex !== -1) {
+            const transportindex = routersObject[routerIndex]?.transport.findIndex((t) => t.id === transport.id);
 
-          routersObject?.[routerIndex]?.transport.splice(transportindex, 1);
+            if (transportindex !== undefined && transportindex !== -1) {
+              routersObject[routerIndex]?.transport.splice(transportindex, 1);
+            }
+          }
 
           const Index = transports.findIndex((tr) => tr.id === transport.id);
-          transports.splice(Index, 1);
+          if (Index !== -1) {
+            transports.splice(Index, 1);
+          }
 
           const transportObjectIndex = TransporObject.findIndex(
             (t) => t.transport.id === transport.id
           );
-          TransporObject.splice(transportObjectIndex, 1);
+          if (transportObjectIndex !== -1) {
+            TransporObject.splice(transportObjectIndex, 1);
+          }
 
           logTransport(io);
         });
@@ -200,7 +212,9 @@ exports.observer = (
           const Index = TransporObject.findIndex(
             (t) => t.transport.id === transport.id
           );
-          TransporObject[Index].producer.push(producer);
+          if (Index !== -1) {
+            TransporObject[Index].producer.push(producer);
+          }
 
           logProducers(io);
           producer.observer.on(CLOSE_EVENT, () => {
@@ -208,7 +222,9 @@ exports.observer = (
               (p) => p.id === producer.id
             );
 
-            producers.splice(producetIndex, 1);
+            if (producetIndex !== -1) {
+              producers.splice(producetIndex, 1);
+            }
             removeTranspotItem(transport.id, producer.id, "producer");
             logProducers(io);
           });
@@ -221,7 +237,9 @@ exports.observer = (
             (t) => t.transport.id === transport.id
           );
 
-          TransporObject[TransportItemIndex].consumer.push(consumer);
+          if (TransportItemIndex !== -1) {
+            TransporObject[TransportItemIndex].consumer.push(consumer);
+          }
 
           logConsumers(io);
 
@@ -229,7 +247,9 @@ exports.observer = (
             const consumerIndex = consumers.findIndex(
               (c) => c.id === consumer.id
             );
-            consumers.splice(consumerIndex, 1);
+            if (consumerIndex !== -1) {
+              consumers.splice(consumerIndex, 1);
+            }
 
             removeTranspotItem(transport.id, consumer.id, "consumer");
 
@@ -243,14 +263,18 @@ exports.observer = (
           const transportObjectIndex = TransporObject.findIndex(
             (t) => t.transport.id === transport.id
           );
-          TransporObject[transportObjectIndex].dataProducer.push(dataProducer);
+          if (transportObjectIndex !== -1) {
+            TransporObject[transportObjectIndex].dataProducer.push(dataProducer);
+          }
 
           logdataProducers(io);
           dataProducer.observer.on(CLOSE_EVENT, () => {
             const dataProducerIndex = dataProducers.findIndex(
               (d) => d.id === dataProducer.id
             );
-            dataProducers.splice(dataProducerIndex, 1);
+            if (dataProducerIndex !== -1) {
+              dataProducers.splice(dataProducerIndex, 1);
+            }
 
             removeTranspotItem(transport.id, dataProducer.id, "dataProducer");
 
@@ -264,14 +288,18 @@ exports.observer = (
           const transportObjectIndex = TransporObject.findIndex(
             (t) => t.transport.id === transport.id
           );
-          TransporObject[transportObjectIndex].dataConsumer.push(dataConsumer);
+          if (transportObjectIndex !== -1) {
+            TransporObject[transportObjectIndex].dataConsumer.push(dataConsumer);
+          }
 
           logdataConsumers(io);
           dataConsumer.observer.on(CLOSE_EVENT, () => {
             const dataConsumerIndex = dataConsumers.findIndex(
               (d) => d.id === dataConsumer.id
             );
-            dataConsumers.splice(dataConsumerIndex, 1);
+            if (dataConsumerIndex !== -1) {
+              dataConsumers.splice(dataConsumerIndex, 1);
+            }
 
             removeTranspotItem(transport.id, dataConsumer.id, "dataConsumer");
 
@@ -285,22 +313,30 @@ exports.observer = (
       webRtcServers.push(webRtcServer);
       const workerIndex = workers.findIndex((w) => w.worker.pid === worker.pid);
 
-      workers?.[workerIndex]?.webRtcServer.push(webRtcServer);
+      if (workerIndex !== -1) {
+        workers[workerIndex]?.webRtcServer.push(webRtcServer);
+      }
 
       logWebrtcServer(io);
       webRtcServer.observer.on(CLOSE_EVENT, () => {
         const webRtcServerIndexItem = webRtcServers.findIndex(
           (w) => w.id === webRtcServer.id
         );
-        webRtcServers.splice(webRtcServerIndexItem, 1);
+        if (webRtcServerIndexItem !== -1) {
+          webRtcServers.splice(webRtcServerIndexItem, 1);
+        }
         const workerIndex = workers.findIndex(
           (w) => w.worker.pid === worker.pid
         );
-        const webRtcServerIndex = workers[workerIndex].webRtcServer.findIndex(
-          (w) => w.id === webRtcServer.id
-        );
+        if (workerIndex !== -1) {
+          const webRtcServerIndex = workers[workerIndex].webRtcServer.findIndex(
+            (w) => w.id === webRtcServer.id
+          );
 
-        workers?.[workerIndex]?.webRtcServer.splice(webRtcServerIndex, 1);
+          if (webRtcServerIndex !== -1) {
+            workers[workerIndex]?.webRtcServer.splice(webRtcServerIndex, 1);
+          }
+        }
 
         logWebrtcServer(io);
       });
