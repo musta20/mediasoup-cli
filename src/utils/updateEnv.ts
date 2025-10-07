@@ -4,8 +4,16 @@ import path from"path";
 
 const envFilePath = path.join(path.resolve(__dirname, "../../"), "config.env");
 //const envFilePath = path.join(path.resolve(__dirname, "config.env"))
+
 // read .env file & convert to array
-const readEnvVars = ():string[] => fs.readFileSync(envFilePath, "utf-8").split(os.EOL);
+const readEnvVars = ():string[] => {
+  try {
+    return fs.readFileSync(envFilePath, "utf-8").split(os.EOL);
+  } catch (e) {
+    console.error("Failed to read config.env:", e instanceof Error ? e.message : e);
+    throw new Error("Configuration file not found or unreadable");
+  }
+};
 
 /**
  * Finds the key in .env files and returns the corresponding value
@@ -45,15 +53,13 @@ export const setEnvValue = async (key:string, value:string | Number) => {
   }
 
  
- try{
-
+ try {
   fs.writeFileSync(envFilePath, envVars.join(os.EOL), {
     flag: 'w',
   });
-
- }catch(e){
-
-console.log(e)
+ } catch(e) {
+  console.error("Failed to write to config.env:", e instanceof Error ? e.message : e);
+  throw new Error("Configuration update failed");
  }
 
 };

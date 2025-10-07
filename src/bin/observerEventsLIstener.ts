@@ -110,8 +110,14 @@ exports.observer = (
         ? parseInt(optionParam.PORT)
         : optionParam.PORT;
 
+    // Validate port range
+    if (isNaN(newtPort) || newtPort < 1 || newtPort > 65535) {
+      console.error(`Invalid port number: ${optionParam.PORT}. Port must be between 1 and 65535.`);
+      throw new Error("Invalid port configuration");
+    }
+
     if (currentPort !== newtPort && newtPort !== 0) {
-      console.log(newtPort)
+      console.log(`mediasoup-cli server starting on port ${newtPort}`);
 
       setEnvValue("MEDIA_SOUP_CLI_PORT", newtPort);
     }

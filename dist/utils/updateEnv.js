@@ -8,7 +8,15 @@ const fs_1 = __importDefault(require("fs"));
 const os_1 = __importDefault(require("os"));
 const path_1 = __importDefault(require("path"));
 const envFilePath = path_1.default.join(path_1.default.resolve(__dirname, "../../"), "config.env");
-const readEnvVars = () => fs_1.default.readFileSync(envFilePath, "utf-8").split(os_1.default.EOL);
+const readEnvVars = () => {
+    try {
+        return fs_1.default.readFileSync(envFilePath, "utf-8").split(os_1.default.EOL);
+    }
+    catch (e) {
+        console.error("Failed to read config.env:", e instanceof Error ? e.message : e);
+        throw new Error("Configuration file not found or unreadable");
+    }
+};
 const getEnvValue = (key) => {
     const matchedLine = readEnvVars().find((line) => line.split("=")[0] === key);
     return matchedLine !== undefined ? matchedLine.split("=")[1] : null;
@@ -30,7 +38,8 @@ const setEnvValue = async (key, value) => {
         });
     }
     catch (e) {
-        console.log(e);
+        console.error("Failed to write to config.env:", e instanceof Error ? e.message : e);
+        throw new Error("Configuration update failed");
     }
 };
 exports.setEnvValue = setEnvValue;
