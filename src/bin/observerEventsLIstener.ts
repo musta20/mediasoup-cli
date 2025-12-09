@@ -61,7 +61,7 @@ import { getEnvValue, setEnvValue } from "../utils/updateEnv";
 import config from "../config";
 
 
-exports.observer = (
+export const observer = (
   { observer }: { observer: EnhancedEventEmitter<ObserverEvents> },
   optionParam: observerObtion
 ) => {

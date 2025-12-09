@@ -5,9 +5,9 @@ import { connectSdk } from "./utils/serverConnection";
 
 const main = async() => {
   
-  connectSdk();
+  await connectSdk();
 
-  startCmd();
+  await startCmd();
 
 };
 

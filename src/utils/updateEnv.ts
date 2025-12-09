@@ -28,7 +28,7 @@ export const getEnvValue = (key:string) => {
  * @param {string} key Key to update/insert
  * @param {string} value Value to update/insert
  */
-export const setEnvValue = async (key:string, value:string | Number) => {
+export const setEnvValue = async (key:string, value:string | number) => {
   const envVars = readEnvVars();
   const targetLine = envVars.find((line) => line.split("=")[0] === key);
   if (targetLine !== undefined) {

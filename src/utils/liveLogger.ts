@@ -15,7 +15,7 @@ import { getProducer, getProducerById } from "../modules/producerModules";
 import {
   getDataProducer,
   getDataProducerById,
-} from "../modules/dataProducerModules ";
+} from "../modules/dataProducerModules";
 import {
   getDataConsumer,
   getDataConsumerById,
