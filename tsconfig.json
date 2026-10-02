@@ -1,23 +1,23 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "module": "CommonJS",
-    "lib": ["dom", "es6", "es2017", "esnext.asynciterable"],
-    "sourceMap": false,
+    "target": "ES2022",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
-    "rootDir": "src",
+    "sourceMap": false,
+    "removeComments": false,
     "strict": true,
-    "types": ["node"],
     "esModuleInterop": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "baseUrl": ".",
-    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "removeComments": true
-  }
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
 }
