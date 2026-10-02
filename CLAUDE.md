@@ -4,87 +4,77 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-mediasoup-cli is a CLI monitoring tool for mediasoup server applications. It provides real-time observation and logging of mediasoup objects (workers, routers, transports, producers, consumers, etc.) via a Socket.IO-based architecture.
+mediasoup-cli is a live terminal monitor for mediasoup server applications. A small observer is embedded in the user's app and serves the state of every mediasoup object (workers, WebRTC servers, routers, transports, producers, consumers, data producers/consumers) over Socket.IO. The CLI connects to it to list, inspect, watch, search and read stats.
 
-## Build & Development Commands
+## Commands
 
 ```bash
-# Build TypeScript to JavaScript
-tsc
-
-# Watch mode (rebuilds on file changes)
-npm run watch
-
-# Start the compiled CLI
-npm start
-
-# Run the CLI tool (after building)
-npx mediasoup-cli
+npm run build        # tsc -> dist/
+npm run watch        # tsc -w
+npm test             # compiles src + test into .test-build/ and runs node:test
+npm start            # node dist/index.js (the CLI)
+npm run demo         # fake SFU on real mediasoup; needs `npm install --no-save mediasoup`
 ```
+
+`npm test` does not need mediasoup: tests use `test/helpers/fakeMediasoup.ts`, which mimics mediasoup's observer events and child-first close order.
 
 ## Architecture
 
-### Dual-Process Model
+### Two processes
 
-The tool operates as two separate processes:
+1. **Observer (library)**, `src/server/`, embedded in the user's app via `observer(mediasoup, options)` (package `main`). It listens on `127.0.0.1:5462` by default.
+2. **CLI**, `src/index.ts` -> `src/cli/app.ts` (package `bin`), run with `npx mediasoup-cli`. It works as an interactive shell or runs a single command.
 
-1. **Server Process** ([src/bin/observerEventsLIstener.ts](src/bin/observerEventsLIstener.ts)): Embedded in the user's mediasoup application, listens to mediasoup observer events and serves data via Socket.IO on port 5462 (configurable)
-2. **CLI Client** ([src/index.ts](src/index.ts)): Standalone CLI that connects to the server process to display and monitor mediasoup objects
+`src/shared/protocol.ts` is the contract between them: one `request` event with an ack callback (`Request` -> `Response`), plus server pushes `changed` (throttled) and `event` (only to sockets that subscribed to the `events` topic). Bump `PROTOCOL_VERSION` on incompatible changes.
 
-### Key Components
+### Server (`src/server/`)
 
-**Store** ([src/bin/store.ts](src/bin/store.ts)): Central state management with arrays for workers, routers, transports, producers, consumers, etc. Maintains hierarchical relationships (workers → routers → transports → producers/consumers).
+- `index.ts`: `observer()`. It resolves options, creates its own `http` server (so `EADDRINUSE` is reported, not thrown), adds the Socket.IO token and Origin checks, and writes the bound port to `config.env` for CLI discovery. It returns `{ ready, close() }`. The http server is `unref()`'d.
+- `tracker.ts`: subscribes to mediasoup observer events (`newworker` -> `newrouter` -> `newtransport` -> `newproducer`/...) and mirrors them into the registry. Every listener is wrapped in try/catch and registered in its entry's `cleanup` list so it is detached on close.
+- `registry.ts`: `Map` of entries keyed by id (workers by pid) with parent/children links, per-kind sets, a producer -> consumers index, ancestor filters, unique-prefix id resolution (`resolve()`) and a bounded event log. `pipeToRouter()` reuses producer ids, so an entry's `key` can differ from its `id` (`<id>@<transportId>`). Always remove entries by object, never by id. Keep request handling linear: no per-object scans of the whole registry.
+- `describe.ts`: turns live objects into plain summaries. Duck-typed on purpose, so it works across mediasoup 3.x versions (e.g. `transportType()` falls back to the class name before 3.15). `UsageSampler` computes worker CPU %.
+- `handlers.ts`: `RequestHandler`, pure request logic (list/tree/inspect/stats/dump/find/events/summary/ids), easy to unit test.
+- `plain.ts`: `toPlain()` makes `appData`/dumps safe to send (cycles, class instances, depth). `flatten()` is used by `find`.
 
-**Observer Event Listener** ([src/bin/observerEventsLIstener.ts](src/bin/observerEventsLIstener.ts)): Hooks into mediasoup's observer pattern to track lifecycle events (newworker, newrouter, newtransport, newproducer, etc.) and CLOSE events. Updates the store and broadcasts changes via Socket.IO.
+Hard rules for server code: never throw into the host app, never keep its process alive (the http server, accepted sockets, engine.io heartbeats and timeouts are all `unref()`'d), and never import `mediasoup` (the user passes the module in, and types are structural).
 
-**CLI Command Interface** ([src/cli/cmd.ts](src/cli/cmd.ts)): REPL-style interface that parses user commands via [mainResolver.ts](src/cli/CliResolvers/mainResolver.ts) and routes to appropriate resolvers.
+### CLI (`src/cli/`)
 
-**Resolvers**: Two types exist:
-- Server-side ([src/Resolvers/](src/Resolvers/)): Socket.IO event handlers that respond to CLI requests
-- Client-side ([src/cli/CliResolvers/](src/cli/CliResolvers/)): Parse CLI commands and send Socket.IO requests
-
-**Live Loggers** ([src/utils/liveLogger.ts](src/utils/liveLogger.ts)): Real-time event streaming for `watch` commands.
+- `args.ts`: tokenizer and flag parser (case-insensitive flags, `--a=b` and `--a b`, the 1.x `routerid=X` form), plus `parseKind` and `parseDuration`.
+- `commands.ts`: command definitions. Each `run()` returns `{ data, text }`, so `--json` and `watch` work for every command. `plan()` turns tokens into a `Plan` (run / watch / follow-events / help / ...) and keeps the 1.x syntax (`watch routers --workerId=1`).
+- `execute.ts`: runs a `Plan`. Shared by the shell and one-shot mode.
+- `shell.ts`: readline shell with persistent history (`~/.mediasoup_cli_history`), tab completion (`completer`, live ids via `IdCache`) and connection status. It closes readline while a watch owns the terminal and reopens it afterwards.
+- `watch.ts`: `runWatch` (alt screen, flicker-free redraw, refresh on timer and on `changed`, stops on q/Esc/Enter/Ctrl+C) and `followEvents`.
+- `render.ts` / `format.ts`: tables (cli-table3), tree, stats grid, inspect, colors (chalk 4, CommonJS).
+- `client.ts`: Socket.IO client with `request()` timeouts and friendly connection/auth errors. `sanitize()` escapes control characters in everything received, because labels and `appData` come from remote peers.
 
 ### Configuration
 
-- Port configuration stored in [config.env](config.env) (MEDIA_SOUP_CLI_PORT, default 5462)
-- Can be overridden when calling `observer()` with `{PORT: "custom_port"}`
-- [src/config.ts](src/config.ts) loads and validates environment variables
+- Observer options: `port` (or legacy `PORT`), `host`, `token`, `maxEvents`. Env: `MEDIA_SOUP_CLI_PORT`, `MEDIA_SOUP_CLI_HOST`, `MEDIA_SOUP_CLI_TOKEN`.
+- CLI resolution order: flags (`--port/--host/--token`) > env > `config.env` (written by the observer into the installed package root) > defaults.
 
-### Command Structure
+### Command structure
 
-Commands follow the pattern: `[action] [object] [--arguments]`
+`show <kind> [<id>] [filters]`, `tree`, `inspect <id>`, `stats <id>`, `dump <id>`, `find <text|key=value>`, `events`, `summary`, `watch <command>`, `top`, `help`, `version`, `clear`, `exit`. Filters: `--workerId --routerId --transportId --producerId`, which match any ancestor. Ids accept unique prefixes.
 
-- Actions: `show` (one-time display), `watch` (real-time monitoring)
-- Objects: workers, routers, transports, producers, consumers, dataproducers, dataconsumers, webrtcservers
-- Arguments: `--workerId=<id>`, `--routerId=<id>`, `--transportId=<id>`
+## Usage
 
-## Usage Pattern
-
-In a mediasoup application:
 ```javascript
 const mediasoup = require("mediasoup");
-const mediaSoupCli = require("mediasoup-cli");
-
-mediaSoupCli.observer(mediasoup, { PORT: "5462" });
+require("mediasoup-cli").observer(mediasoup); // before createWorker()
 ```
 
-Then in a separate terminal:
 ```bash
-npx mediasoup-cli
-# mediaSoup-Cli: show workers
-# mediaSoup-Cli: watch routers --workerId=12345
+npx mediasoup-cli            # shell
+npx mediasoup-cli tree       # one-shot
+npx mediasoup-cli show consumers --json | jq .
 ```
 
 ## Dependencies
 
-- **mediasoup 3.x**: Peer dependency (required in host application)
-- **socket.io/socket.io-client 4.5.1**: Client-server communication
-- **chalk 4.1.2**: CLI colorization
-- **cli-table3**: Table formatting for output
-- **typescript 4.7.4**: Compilation
+Runtime: `socket.io` (observer), `socket.io-client` (CLI), `chalk@4` (stay on 4: v5 is ESM-only), `cli-table3`. Dev: `typescript`, `@types/node`. `mediasoup` is an optional peer dependency and is never imported.
 
-## Entry Points
+## Entry points
 
-- Main binary: [dist/index.js](dist/index.js) (built from [src/index.ts](src/index.ts))
-- Server library: [dist/bin/observerEventsLIstener.js](dist/bin/observerEventsLIstener.js)
+- Library: `dist/server/index.js` (`main`/`types`). `dist/bin/observerEventsLIstener.js` is a deprecated re-export kept for 1.x deep imports.
+- CLI: `dist/index.js` (`bin`).
