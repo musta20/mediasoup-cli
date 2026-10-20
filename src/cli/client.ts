@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { io, Socket } from "socket.io-client";
-import { Request, Response } from "../shared/protocol";
+import { ReplEvent, Request, Response } from "../shared/protocol";
 
 export interface Target {
   host: string;
@@ -14,6 +14,11 @@ export const formatTarget = ({ host, port }: Target): string =>
 export class NotConnectedError extends Error {}
 
 const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/g;
+
+/** Preserve line layout, but never accept terminal commands from REPL output. */
+export const sanitizeReplOutput = (text: string): string =>
+  text.replace(CONTROL_CHARS, (c) =>
+    c === "\n" || c === "\t" ? c : `\\x${c.charCodeAt(0).toString(16).padStart(2, "0")}`);
 
 /**
  * Strings come from the app and, through data channel labels or appData, from
@@ -64,6 +69,15 @@ export class Client extends EventEmitter {
     });
     this.socket.on("changed", () => this.emit("changed"));
     this.socket.on("event", (record) => this.emit("event", sanitize(record)));
+    this.socket.on("repl", (event: ReplEvent) => {
+      if (event?.type === "output" && typeof event.text === "string") {
+        this.emit("repl", { type: "output", text: sanitizeReplOutput(event.text) });
+      } else if (event?.type === "prompt" && typeof event.prompt === "string") {
+        this.emit("repl", { type: "prompt", prompt: sanitize(event.prompt) });
+      } else if (event?.type === "closed") {
+        this.emit("repl", { type: "closed" });
+      }
+    });
   }
 
   get connected(): boolean {

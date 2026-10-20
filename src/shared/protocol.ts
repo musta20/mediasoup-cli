@@ -37,6 +37,27 @@ export const FILTER_KEYS: ReadonlyArray<keyof Filter> = [
   "producerId",
 ];
 
+export const WORKER_LOG_LEVELS = ["debug", "warn", "error", "none"] as const;
+export const WORKER_LOG_TAGS = [
+  "info", "ice", "dtls", "rtp", "srtp", "rtcp", "rtx", "bwe",
+  "score", "simulcast", "svc", "sctp", "message",
+] as const;
+
+export interface WorkerLogSettings {
+  logLevel?: (typeof WORKER_LOG_LEVELS)[number];
+  logTags?: Array<(typeof WORKER_LOG_TAGS)[number]>;
+}
+
+export interface WorkerSettingsResult {
+  settings: WorkerLogSettings;
+  workers: Array<{ workerId: string; ok: boolean; error?: string }>;
+}
+
+export type ReplEvent =
+  | { type: "output"; text: string }
+  | { type: "prompt"; prompt: string }
+  | { type: "closed" };
+
 export type Request =
   | { cmd: "hello" }
   | { cmd: "summary" }
@@ -48,6 +69,11 @@ export type Request =
   | { cmd: "find"; query: string }
   | { cmd: "events"; limit?: number; kind?: ObjectKind }
   | { cmd: "ids" }
+  | { cmd: "workerSettings"; workerId?: string; settings: WorkerLogSettings }
+  | { cmd: "replStart" }
+  | { cmd: "replInput"; line: string }
+  | { cmd: "replComplete"; line: string }
+  | { cmd: "replStop" }
   | { cmd: "subscribe"; topic: "events" }
   | { cmd: "unsubscribe"; topic: "events" };
 
@@ -174,6 +200,8 @@ export interface ServerInfo {
   nodeVersion: string;
   /** Epoch ms when observer() was called. */
   startedAt: number;
+  /** Absent on observers older than these optional commands. */
+  capabilities?: { workerSettings: boolean; repl: boolean };
 }
 
 export interface Summary {

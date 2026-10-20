@@ -4,6 +4,7 @@ import { Client } from "./client";
 import { helpText, Plan, UsageError, versionText } from "./commands";
 import { dim, errorText } from "./format";
 import { followEvents, runWatch } from "./watch";
+import { runRepl } from "./repl";
 
 export interface ExecuteEnv {
   client: Client;
@@ -59,8 +60,13 @@ export const execute = async (planned: Plan, env: ExecuteEnv): Promise<void> => 
     case "run": {
       const output = await planned.command.run({ client }, planned.args);
       print(planned.json ? JSON.stringify(output.data, null, 2) : output.text);
+      if (output.failed) throw new Error("one or more workers could not be updated; see the results above");
       return;
     }
+
+    case "repl":
+      await runRepl(client);
+      return;
 
     case "watch":
       await runWatch({

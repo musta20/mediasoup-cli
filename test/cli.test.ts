@@ -45,6 +45,18 @@ describe("plan", () => {
     assert.equal(events.type === "follow-events" && events.kind, "consumer");
   });
 
+  it("plans a watched tree table with filters and full ids", () => {
+    const p = planOf("watch tree --TABLE --full --routerId=abc --interval=500ms");
+    assert.equal(p.type, "watch");
+    if (p.type !== "watch") return;
+    assert.equal(p.command.name, "tree");
+    assert.equal(p.args.flags.table, true);
+    assert.equal(p.args.flags.full, true);
+    assert.equal(p.args.flags.routerId, "abc");
+    assert.equal(p.intervalMs, 500);
+    assert.match(helpText("tree"), /--table/);
+  });
+
   it("handles shell built-ins and help", () => {
     assert.equal(planOf("exit").type, "exit");
     assert.equal(planOf("quit").type, "exit");
@@ -60,10 +72,17 @@ describe("plan", () => {
     assert.throws(() => planOf("watch"), /what should I watch/);
     assert.throws(() => planOf("watch events --kind=bogus"), /unknown kind/);
     assert.throws(() => planOf("watch tree --interval=soon"), /invalid interval/);
+    assert.throws(() => planOf("watch logLevel debug"), /cannot be watched/);
+    assert.throws(() => planOf("watch logTags ice"), /cannot be watched/);
+    assert.throws(() => planOf("repl --json"), /no arguments/);
+    assert.throws(() => planOf("repl worker.pid"), /no arguments/);
+    assert.equal(planOf("repl").type, "repl");
+    assert.equal(planOf("js").type, "repl");
+    assert.equal(findCommand("LOGLEVEL")?.name, "logLevel");
   });
 
   it("has help for every command", () => {
-    for (const name of ["show", "tree", "inspect", "stats", "dump", "find", "events", "summary", "watch", "top"]) {
+    for (const name of ["show", "tree", "inspect", "stats", "dump", "find", "events", "summary", "watch", "top", "logLevel", "logTags", "repl", "js"]) {
       assert.match(helpText(name), /Usage:/, name);
     }
     assert.match(helpText(undefined, "argv"), /--port/);
@@ -97,7 +116,13 @@ describe("completer", () => {
     assert.deepEqual(complete("show producers "), [["abcd-1 "], ""]);
     assert.deepEqual(complete("watch st"), [["stats "], "st"]);
     assert.deepEqual(complete("watch tree --int"), [["--interval="], "--int"]);
+    assert.deepEqual(complete("tree --ta"), [["--table "], "--ta"]);
+    assert.deepEqual(complete("watch tree --ta"), [["--table "], "--ta"]);
     assert.deepEqual(complete("find "), [[], ""]);
+    assert.deepEqual(complete("logLevel d"), [["debug "], "d"]);
+    assert.deepEqual(complete("logTags ice dt"), [["dtls "], "dt"]);
+    assert.deepEqual(complete("logTags --cl"), [["--clear "], "--cl"]);
+    assert.deepEqual(complete("logLevel error --workerId=10"), [["--workerId=101", "--workerId=102"], "--workerId=10"]);
   });
 });
 
@@ -154,6 +179,22 @@ describe("commands against a server", () => {
     assert.match((await run("events --limit=2")).text, /created/);
     assert.match((await run("summary")).text, /no issues detected/);
     assert.match((await run("show workers")).text, /20\.0 MB/);
+  });
+
+  it("renders a filtered subtree as a table while preserving JSON data", async () => {
+    const { text, data } = await run(`tree --table --routerId=${scenario.router.id}`);
+    const normal = await run(`tree --routerId=${scenario.router.id}`);
+    assert.deepEqual(data, normal.data);
+    assert.match(text, /│ Object/);
+    assert.match(text, /Type \/ Codec/);
+    assert.ok(text.includes(scenario.producer.id.slice(0, 8)));
+    assert.ok(text.includes("opus"));
+    assert.ok(!text.includes(scenario.producer.id));
+
+    const full = await run(`tree ${scenario.send.id.slice(0, 8)} --table --full`);
+    assert.ok(full.text.includes(scenario.send.id));
+    assert.ok(full.text.includes(scenario.producer.id));
+    assert.ok(!full.text.includes(scenario.recv.id));
   });
 
   it("reports empty lists nicely", async () => {

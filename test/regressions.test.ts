@@ -107,7 +107,7 @@ describe("review regressions", () => {
     const script = `
       const { observer } = require(${JSON.stringify(SERVER)});
       const { createFakeMediasoup } = require(${JSON.stringify(FAKE)});
-      const handle = observer(createFakeMediasoup(), { port: 0 });
+      const handle = observer(createFakeMediasoup(), { port: 0, allowRepl: true });
       handle.ready.then(({ port }) => console.log(port));
       setTimeout(() => {}, 600); // the app's own work
     `;
@@ -118,6 +118,7 @@ describe("review regressions", () => {
     const client = new Client({ host: "127.0.0.1", port });
     clients.push(client);
     await client.waitForConnection(2000);
+    await client.request({ cmd: "replStart" });
     const connectedAt = Date.now();
 
     const exitedAt = await Promise.race([exited, sleep(4000).then(() => Infinity)]);

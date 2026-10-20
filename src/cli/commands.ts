@@ -11,6 +11,10 @@ import {
   StatsResult,
   Summary,
   TreeNode,
+  WorkerLogSettings,
+  WorkerSettingsResult,
+  WORKER_LOG_LEVELS,
+  WORKER_LOG_TAGS,
 } from "../shared/protocol";
 import { KIND_WORDS, parseArgs, parseDuration, parseKind, ParsedArgs } from "./args";
 import { Client } from "./client";
@@ -24,18 +28,20 @@ import {
   renderStats,
   renderSummary,
   renderTree,
+  renderTreeTable,
 } from "./render";
 
 export interface Output {
   data: unknown;
   text: string;
+  failed?: boolean;
 }
 
 export interface CommandContext {
   client: Client;
 }
 
-export type Completion = "kind" | "id" | "command";
+export type Completion = "kind" | "id" | "command" | "logLevel" | "logTag";
 
 export interface Command {
   name: string;
@@ -125,11 +131,11 @@ const show: Command = {
 
 const tree: Command = {
   name: "tree",
-  usage: "tree [<id>] [--workerId=<pid>] [--routerId=<id>] [--transportId=<id>] [--full]",
+  usage: "tree [<id>] [--workerId=<pid>] [--routerId=<id>] [--transportId=<id>] [--full] [--table]",
   summary: "Show the worker → router → transport → producer/consumer hierarchy",
-  details: "Ids are shortened to 8 characters, use --full to see them entirely.",
-  examples: ["tree", "tree 7f3a2b1c", "tree --workerId=12345 --full"],
-  flags: [...FILTER_FLAGS.filter((f) => f !== "--producerId="), "--full"],
+  details: "Ids are shortened to 8 characters, use --full to see them entirely.\nUse --table to align types, states and scores in columns while keeping the hierarchy.",
+  examples: ["tree", "tree 7f3a2b1c", "tree --workerId=12345 --full", "tree --table", "watch tree --table"],
+  flags: [...FILTER_FLAGS.filter((f) => f !== "--producerId="), "--full", "--table"],
   complete: ["id"],
   watchable: true,
   async run(ctx, args) {
@@ -138,7 +144,8 @@ const tree: Command = {
       filter: filterFrom(args),
       rootId: args.positionals[0],
     });
-    return { data: roots, text: renderTree(roots, args.flags.full === true) };
+    const render = args.flags.table === true ? renderTreeTable : renderTree;
+    return { data: roots, text: render(roots, args.flags.full === true) };
   },
 };
 
@@ -236,8 +243,64 @@ const summary: Command = {
   },
 };
 
+const updateLogging = async (ctx: CommandContext, args: ParsedArgs, settings: WorkerLogSettings): Promise<Output> => {
+  for (const flag of Object.keys(args.flags)) {
+    if (!["workerId", "json", "clear", "host", "port", "token", "noColor"].includes(flag)) {
+      throw new UsageError(`unsupported flag --${flag}; logging can be scoped with --workerId=<pid>`);
+    }
+  }
+  const workerId = args.flags.workerId;
+  if (workerId === true || workerId === "") throw new UsageError("--workerId needs a worker pid");
+  const data = await ctx.client.request<WorkerSettingsResult>({ cmd: "workerSettings", settings, workerId });
+  const label = settings.logLevel !== undefined ? `logLevel=${settings.logLevel}` : `logTags=[${settings.logTags?.join(", ")}]`;
+  return {
+    data,
+    failed: data.workers.some((worker) => !worker.ok),
+    text: data.workers.map((worker) => worker.ok
+      ? `${chalk.green("✓")} worker ${worker.workerId}: ${label}`
+      : `${chalk.red("✗")} worker ${worker.workerId}: ${worker.error}`).join("\n"),
+  };
+};
+
+const logLevel: Command = {
+  name: "logLevel",
+  usage: "logLevel <debug|warn|error|none> [--workerId=<pid>]",
+  summary: "Change logging severity for all workers or one worker",
+  details: "Requires observer option allowWorkerSettings: true. Affects existing workers only.\nLogs still go to your application's configured mediasoup logger.",
+  flags: ["--workerId="],
+  complete: ["logLevel"],
+  examples: ["logLevel debug", "logLevel error --workerId=12345"],
+  async run(ctx, args) {
+    const level = args.positionals[0]?.toLowerCase() as WorkerLogSettings["logLevel"];
+    if (args.positionals.length !== 1 || !WORKER_LOG_LEVELS.includes(level!) || args.flags.clear !== undefined) {
+      throw new UsageError("choose one log level: debug, warn, error or none", this.usage);
+    }
+    return updateLogging(ctx, args, { logLevel: level });
+  },
+};
+
+const logTags: Command = {
+  name: "logTags",
+  usage: "logTags <tag...|--clear> [--workerId=<pid>]",
+  summary: "Replace worker log tags, or clear them with --clear",
+  details: `Requires observer option allowWorkerSettings: true. Replaces the whole tag list.\nTags: ${WORKER_LOG_TAGS.join(", ")}.\nUse logLevel debug to enable debug output; logs go to your application.`,
+  flags: ["--workerId=", "--clear"],
+  complete: ["logTag"],
+  examples: ["logTags ice dtls rtp", "logTags score bwe --workerId=12345", "logTags --clear"],
+  async run(ctx, args) {
+    const tags = args.positionals.flatMap((value) => value.toLowerCase().split(","));
+    const clear = args.flags.clear === true;
+    if ((clear && tags.length) || (!clear && !tags.length) ||
+        (args.flags.clear !== undefined && !clear) ||
+        tags.some((tag) => !(WORKER_LOG_TAGS as readonly string[]).includes(tag))) {
+      throw new UsageError(`provide valid tags or --clear; tags: ${WORKER_LOG_TAGS.join(", ")}`, this.usage);
+    }
+    return updateLogging(ctx, args, { logTags: [...new Set(tags)] as WorkerLogSettings["logTags"] });
+  },
+};
+
 /** Commands that talk to the server, in help order. */
-export const COMMANDS: Command[] = [show, tree, inspectCommand, stats, dump, find, events, summary];
+export const COMMANDS: Command[] = [show, tree, inspectCommand, stats, dump, find, events, summary, logLevel, logTags];
 
 /** Commands handled by the shell itself (help/watch/exit…), for help and completion. */
 export const SHELL_COMMANDS: Array<Pick<Command, "name" | "aliases" | "usage" | "summary" | "details" | "examples" | "flags" | "complete">> = [
@@ -255,6 +318,14 @@ export const SHELL_COMMANDS: Array<Pick<Command, "name" | "aliases" | "usage" | 
     usage: "top",
     summary: "Live summary, same as `watch summary`",
   },
+  {
+    name: "repl",
+    aliases: ["js"],
+    usage: "repl",
+    summary: "Open a JavaScript console in the server (.exit to return)",
+    details: "Requires observer option allowRepl: true and an interactive terminal.\nRuns with the server's privileges. Changes affect the running application.\nGlobals: mediasoup, get(id), workers, webRtcServers, routers, transports,\nproducers, consumers, dataProducers, dataConsumers; singular names select the newest object.\nSupports await, multiline input and JavaScript tab completion. .exit or Ctrl+D/Ctrl+C returns to the CLI.",
+    examples: ["repl", "js"],
+  },
   { name: "help", aliases: ["?"], usage: "help [command]", summary: "Show help", complete: ["command"] },
   { name: "version", usage: "version", summary: "Show the CLI and server versions" },
   { name: "clear", aliases: ["cls"], usage: "clear", summary: "Clear the screen" },
@@ -264,13 +335,13 @@ export const SHELL_COMMANDS: Array<Pick<Command, "name" | "aliases" | "usage" | 
 export const findCommand = (name: string | undefined): Command | undefined => {
   if (!name) return undefined;
   const lower = name.toLowerCase();
-  return COMMANDS.find((c) => c.name === lower || c.aliases?.includes(lower));
+  return COMMANDS.find((c) => c.name.toLowerCase() === lower || c.aliases?.includes(lower));
 };
 
 const findAnyCommand = (name: string | undefined) => {
   if (!name) return undefined;
   const lower = name.toLowerCase();
-  return [...COMMANDS, ...SHELL_COMMANDS].find((c) => c.name === lower || c.aliases?.includes(lower));
+  return [...COMMANDS, ...SHELL_COMMANDS].find((c) => c.name.toLowerCase() === lower || c.aliases?.includes(lower));
 };
 
 export const allCommandNames = (): string[] =>
@@ -283,6 +354,7 @@ export type Plan =
   | { type: "help"; topic?: string }
   | { type: "version"; json: boolean }
   | { type: "clear" }
+  | { type: "repl" }
   | { type: "exit" }
   | { type: "noop" };
 
@@ -320,6 +392,12 @@ export const plan = (tokens: string[]): Plan => {
       return planWatch({ positionals: ["summary"], flags: args.flags }, json);
     case "watch":
       return planWatch(restArgs, json);
+    case "repl":
+    case "js":
+      if (rest.length || Object.keys(args.flags).some((flag) => !["host", "port", "token", "noColor"].includes(flag))) {
+        throw new UsageError("repl takes no arguments or output flags", "repl");
+      }
+      return { type: "repl" };
   }
 
   const command = findCommand(name);

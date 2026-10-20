@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `tree --table` aligns object types, connection states, scores and details in columns while preserving hierarchy. Works with filters, `--full`, `watch` and tab completion; JSON output retains its existing structure.
+- Opt-in worker logging commands: `logLevel` and `logTags`, all workers or `--workerId`, explicit `--clear`, JSON results, per-worker errors and settings events. Enable with `allowWorkerSettings: true`.
+- Opt-in `repl` (`js`) with Node's native evaluator, top-level `await`, multiline input, completion and live mediasoup objects. Sessions are scoped to each connection, support `.exit` back to the CLI, and end on disconnect. Enable server-side JavaScript execution with `allowRepl: true`.
+
 ## 2.0.0 — 2026-10-20
 
 A rewrite of both the observer and the CLI. The `observer(mediasoup, { PORT })` API and the 1.x command syntax keep working.

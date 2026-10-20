@@ -20,6 +20,8 @@ const FLAG_NAMES: Record<string, string> = {
   token: "token",
   json: "json",
   full: "full",
+  table: "table",
+  clear: "clear",
   help: "help",
   h: "help",
   version: "version",

@@ -57,6 +57,9 @@ Singular kinds work too. `show producer PRODUCER_ID` opens the inspection view.
 ```text
 tree
 tree --full
+tree --table
+tree --table --full
+tree --table --routerId=ROUTER_ID
 tree ROUTER_ID
 tree TRANSPORT_ID
 inspect WORKER_PID
@@ -106,6 +109,7 @@ watch events
 watch events --kind=producer
 watch summary
 watch tree
+watch tree --table
 watch show transports
 watch producers
 watch consumers --routerId=ROUTER_ID
@@ -132,6 +136,39 @@ watch events --json
 
 Watch JSON output is newline-delimited JSON: one complete JSON value per line.
 
+### Worker logging
+
+The live demo harness enables both server controls. Change worker logging from the CLI:
+
+```text
+logLevel debug
+logTags ice dtls rtp
+logTags score bwe --workerId=WORKER_PID
+logLevel warn --workerId=WORKER_PID
+logTags --clear
+logLevel error
+logLevel warn --json
+```
+
+Watch `.live-test-artifacts/server.log` for logs emitted by the demo's configured logger. Log tags replace the previous list. These settings apply to existing workers.
+
+### JavaScript console
+
+Enter `repl` in the CLI, or run `node dist/index.js repl` from another terminal. At `js>`:
+
+```js
+workers.size
+await worker.dump()
+[...producers.keys()]
+const p = get("PRODUCER_ID") // replace with an actual id
+await p.getStats()
+await p.pause()
+p.paused
+await p.resume()
+```
+
+Use `inspect PRODUCER_ID` or `watch events` in another CLI to see those changes. `.exit`, Ctrl+D or Ctrl+C returns to the normal CLI. This is JavaScript in the demo server process, so its changes affect the running demo. In your own app, enable these features with `observer(mediasoup, { allowWorkerSettings: true, allowRepl: true })`.
+
 ### Shell controls and aliases
 
 ```text
@@ -146,6 +183,7 @@ exit
 | `find` | `search` |
 | `events` | `log` |
 | `summary` | `status`, `overview` |
+| `repl` | `js` |
 | `help` | `?` |
 | `clear` | `cls` |
 | `exit` | `quit`, `q` |
@@ -163,7 +201,7 @@ node dist/index.js --help
 node dist/index.js --version
 ```
 
-Connection options: `--host`, `--port`, `--token`. Output options: `--json`, `--no-color`; tree supports `--full`; watch supports `--interval=500ms` or `--interval=2s`. For example, using the port printed by the demo:
+Connection options: `--host`, `--port`, `--token`. Output options: `--json`, `--no-color`; tree supports `--full` and `--table`; watch supports `--interval=500ms` or `--interval=2s`. For example, using the port printed by the demo:
 
 ```sh
 node dist/index.js --host 127.0.0.1 --port OBSERVER_PORT summary

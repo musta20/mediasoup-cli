@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { EventEmitter } from "events";
+import { WorkerLogSettings } from "../../src/shared/protocol";
 
 /**
  * Minimal stand-ins for mediasoup objects. They expose the same observer
@@ -163,6 +164,14 @@ export class FakeWorker extends FakeObject {
   died = false;
   readonly routers = new Set<FakeRouter>();
   readonly servers = new Set<FakeWebRtcServer>();
+  logSettings: WorkerLogSettings = { logLevel: "error", logTags: [] };
+  readonly settingsUpdates: WorkerLogSettings[] = [];
+
+  async updateSettings(settings: WorkerLogSettings): Promise<void> {
+    if (this.closed) throw new Error("worker closed");
+    this.settingsUpdates.push(settings);
+    Object.assign(this.logSettings, settings);
+  }
 
   protected closeChildren(): void {
     for (const r of this.routers) r.close();

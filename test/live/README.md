@@ -51,13 +51,24 @@ This opens visible Alice and Bob Chrome windows with synthetic media and keeps t
 - CLI summary, tree, inspect by short id, search by peer id, producer filters, dumps, tables and nonzero RTP stats.
 - NDJSON watch snapshots and streaming CLI events.
 - Fullscreen watch in a real PTY: q and Ctrl+C exit cleanly and restore the screen and cursor.
+- Worker logging updates for all workers and one pid, tag clearing, and per-worker acknowledgements from mediasoup.
+- Native JavaScript REPL in a real PTY: worker dumps, top-level await, multiline input, errors, `.exit`/Ctrl+C/Ctrl+D, and returning to the CLI shell.
+- REPL pause/resume and stats on a real video producer while fake browser users are connected.
 - SCTP chat delivery between browsers.
 - Microphone pause/resume in CLI state and events.
 - Peer departure and complete room cleanup without stale objects.
 
 Artifacts include `report.json`, screenshots of both users, CLI tables, terminal transcripts, and app/server/watch/event logs. They are ignored by git. This local test does not cover remote networks, TURN, physical devices or every supported mediasoup release.
 
-## Verified run — 2026-10-20
+The observer preloader enables `allowWorkerSettings` and `allowRepl` for these local tests and manual mode. Both options are disabled by default in applications.
+
+## Controls and tree table verified run — 2026-10-20
+
+All 16 live checks passed with the same demo revision and versions listed below, including worker logging, REPL mutations of real media objects, terminal handoff and exit controls, and `tree --table`. Both fake-camera users exchanged audio/video and SCTP messages; there were no browser runtime errors. Room objects were removed after both users left, and the harness stopped its browser and servers.
+
+All 92 unit tests passed on Node.js 18.20.8, 20.20.2, 22.23.3 and 24.22.0. These include disabled controls, authentication, input validation, partial worker-update failures, per-connection REPL variables, error recovery, reconnect behavior, and closing a REPL while an awaited operation is still pending.
+
+## Original 2.0.0 verified run — 2026-10-20
 
 All 12 live checks passed on Node.js 24.22.0, mediasoup 3.30.1, mediasoup-client 3.25.1 and Google Chrome 155.0.8059.84, using the demo revision above. The unit suite also passed all 72 tests after adding the harness.
 

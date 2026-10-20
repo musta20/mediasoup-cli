@@ -3,7 +3,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import readline from "readline";
-import { FILTER_KEYS, IdEntry, ObjectKind, ServerInfo } from "../shared/protocol";
+import { FILTER_KEYS, IdEntry, ObjectKind, ServerInfo, WORKER_LOG_LEVELS, WORKER_LOG_TAGS } from "../shared/protocol";
 import { canonicalFlag, KIND_WORDS, parseKind, tokenize } from "./args";
 import { Client, formatTarget } from "./client";
 import {
@@ -132,6 +132,8 @@ export const completer = (ids: { get(kind?: ObjectKind): string[] }) =>
     let candidates: string[] = [];
     if (what === "kind") candidates = KIND_WORDS;
     if (what === "command") candidates = allCommandNames().filter((n) => n.length > 1);
+    if (what === "logLevel") candidates = [...WORKER_LOG_LEVELS];
+    if (what === "logTag" || command.name === "logTags") candidates = [...WORKER_LOG_TAGS];
     if (what === "id") {
       // `show producers <id>` only offers producer ids.
       const kind = command.name === "show" ? parseKind(positionals[0]) : parseKind(words[0]);
@@ -283,7 +285,7 @@ export const startShell = async (client: Client): Promise<void> => {
 
     // The stop key reader needs stdin to itself whenever it is a TTY, even
     // when stdout is not (e.g. `mediasoup-cli | tee log`).
-    const takesOverScreen = planned.type === "watch" || planned.type === "follow-events";
+    const takesOverScreen = planned.type === "watch" || planned.type === "follow-events" || planned.type === "repl";
     if (takesOverScreen && stdin.isTTY) suspend();
 
     busy = true;

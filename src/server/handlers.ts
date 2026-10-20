@@ -14,6 +14,10 @@ import {
   Summary,
   TreeNode,
   WorkerSummary,
+  WorkerLogSettings,
+  WorkerSettingsResult,
+  WORKER_LOG_LEVELS,
+  WORKER_LOG_TAGS,
 } from "../shared/protocol";
 import { describe, UsageSampler, withTimeout } from "./describe";
 import { flatten, toPlain } from "./plain";
@@ -66,9 +70,47 @@ export class RequestHandler {
         return this.events(request.limit, request.kind);
       case "ids":
         return this.ids();
+      case "workerSettings":
+        return this.workerSettings(request.settings, request.workerId);
       default:
         throw new Error(`unknown request "${(request as { cmd?: unknown }).cmd}"`);
     }
+  }
+
+  private async workerSettings(settings: WorkerLogSettings, workerId?: string): Promise<WorkerSettingsResult> {
+    if (!this.info.capabilities?.workerSettings) {
+      throw new Error("worker logging controls are disabled; enable observer(mediasoup, { allowWorkerSettings: true })");
+    }
+    if (!settings || typeof settings !== "object" || Array.isArray(settings) ||
+        !Object.keys(settings).length || Object.keys(settings).some((key) => key !== "logLevel" && key !== "logTags")) {
+      throw new Error("settings must contain logLevel and/or logTags");
+    }
+    if ("logLevel" in settings && !WORKER_LOG_LEVELS.includes(settings.logLevel!)) {
+      throw new Error(`invalid logLevel; choose ${WORKER_LOG_LEVELS.join(", ")}`);
+    }
+    if ("logTags" in settings && (!Array.isArray(settings.logTags) ||
+        settings.logTags.some((tag) => !WORKER_LOG_TAGS.includes(tag)))) {
+      throw new Error(`invalid logTags; choose ${WORKER_LOG_TAGS.join(", ")}`);
+    }
+    if (workerId !== undefined && (typeof workerId !== "string" || !workerId.trim())) {
+      throw new Error("workerId must be a nonempty string");
+    }
+    const entries = workerId === undefined ? this.registry.all("worker") : [this.registry.resolve(workerId, "worker")];
+    if (!entries.length) throw new Error("no workers found");
+    const applied: WorkerLogSettings = {
+      ...(settings.logLevel !== undefined ? { logLevel: settings.logLevel } : {}),
+      ...(settings.logTags !== undefined ? { logTags: [...new Set(settings.logTags)] } : {}),
+    };
+    const workers = await Promise.all(entries.map(async (entry) => {
+      try {
+        await withTimeout(entry.object.updateSettings(applied), 5000, "updateSettings (the update may still complete)");
+        this.registry.record("worker", entry.id, "settings", JSON.stringify(applied));
+        return { workerId: entry.id, ok: true };
+      } catch (err) {
+        return { workerId: entry.id, ok: false, error: err instanceof Error ? err.message : String(err) };
+      }
+    }));
+    return { settings: applied, workers };
   }
 
   private async describeAll(entries: Entry[]): Promise<ObjectSummary[]> {

@@ -184,19 +184,69 @@ async function main() {
     return json ? JSON.parse(stdout) : stdout;
   };
   const baseArgs = [path.join(root, 'dist/index.js'), '--host', '127.0.0.1', '--port', String(port), '--no-color'];
+  const workerList = await cli(['show', 'workers']);
+  let logging = await cli(['logLevel', 'debug']);
+  assert.equal(logging.workers.length, 2);
+  assert.ok(logging.workers.every((worker) => worker.ok));
+  logging = await cli(['logTags', 'ice', 'dtls', `--workerId=${workerList[0].id}`]);
+  assert.deepEqual(logging.workers, [{ workerId: workerList[0].id, ok: true }]);
+  assert.deepEqual(logging.settings, { logTags: ['ice', 'dtls'] });
+  assert.ok((await cli(['logTags', '--clear'])).workers.every((worker) => worker.ok));
+  assert.ok((await cli(['logLevel', 'error'])).workers.every((worker) => worker.ok));
+  passed('logging commands update real workers, target one pid, clear tags and restore error level');
+
+  for (const mode of ['shell', 'exit', 'ctrl-c', 'ctrl-d']) {
+    const { stdout } = await exec('python3', [
+      path.join(root, 'test/live/tty-repl.py'), mode, process.execPath,
+      ...baseArgs, ...(mode === 'shell' ? [] : ['repl']),
+    ], { timeout: 45000 });
+    fs.writeFileSync(path.join(artifacts, `tty-repl-${mode}.json`), stdout);
+    assert.equal(JSON.parse(stdout).exitCode, 0);
+  }
+  passed('native REPL in a real PTY: live worker dumps, await, multiline, errors, exit keys and shell return');
+
+  let replText = '';
+  let replPrompts = 0;
+  const onRepl = (event) => {
+    if (event.type === 'output') replText += event.text;
+    if (event.type === 'prompt') replPrompts++;
+  };
+  const evalLine = async (line) => {
+    const before = replPrompts;
+    replText = '';
+    await client.request({ cmd: 'replInput', line });
+    await until('REPL evaluation', () => replPrompts > before);
+    return replText;
+  };
+  client.on('repl', onRepl);
+  await client.request({ cmd: 'replStart' });
+  try {
+    await until('REPL prompt', () => replPrompts > 0);
+    const target = producers.find((producer) => producer.mediaKind === 'video');
+    await evalLine(`await get(${JSON.stringify(target.id)}).pause()`);
+    assert.equal((await cli(['inspect', target.id])).summary.paused, true);
+    await evalLine(`await get(${JSON.stringify(target.id)}).resume()`);
+    assert.equal((await cli(['inspect', target.id])).summary.paused, false);
+    assert.match(await evalLine(`(await get(${JSON.stringify(target.id)}).getStats())[0].type`), /inbound-rtp/);
+  } finally {
+    await client.request({ cmd: 'replStop' });
+    client.off('repl', onRepl);
+  }
+  passed('REPL pauses and resumes a real video producer and reads its RTP stats');
+
   const ndjson = (state) => state.text.slice(0, state.text.lastIndexOf('\n')).split('\n').filter(Boolean).map((line) => JSON.parse(line));
-  const watch = start('watch', [...baseArgs, 'watch', 'producers', '--json', '--interval=200ms'], root, env);
+  const watch = start('watch', [...baseArgs, 'watch', 'tree', '--table', '--json', '--interval=200ms'], root, env);
   const following = start('events', [...baseArgs, 'watch', 'events', '--json'], root, env);
   await until('watch JSON frames', () => ndjson(watch).length >= 2);
-  assert.ok(ndjson(watch).every((frame) => Array.isArray(frame) && frame.length === 4));
+  assert.ok(ndjson(watch).every((frame) => Array.isArray(frame) && frame.length === 2 && frame.every((node) => node.summary.kind === 'worker')));
   await until('event follower backlog', () => ndjson(following).length > 0);
-  passed('watch streams valid NDJSON snapshots against the real server');
+  passed('watch tree --table streams valid NDJSON tree snapshots against the real server');
   for (const key of ['q', 'ctrl-c']) {
-    const { stdout } = await exec('python3', [path.join(root, 'test/live/tty-watch.py'), key, process.execPath, ...baseArgs, 'watch', 'producers', '--interval=200ms'], { timeout: 20000 });
+    const { stdout } = await exec('python3', [path.join(root, 'test/live/tty-watch.py'), key, process.execPath, ...baseArgs, 'watch', 'tree', '--table', '--interval=200ms'], { timeout: 20000 });
     fs.writeFileSync(path.join(artifacts, `tty-${key}.json`), stdout);
     assert.equal(JSON.parse(stdout).exitCode, 0);
   }
-  passed('fullscreen watch stops with q and Ctrl+C and restores screen and cursor');
+  passed('fullscreen tree table stops with q and Ctrl+C and restores screen and cursor');
 
   const summary = await cli(['summary']);
   report.connected = summary;
@@ -206,6 +256,17 @@ async function main() {
   assert.ok(summary.counts.dataConsumer >= 2);
   const tree = await cli(['tree']);
   assert.equal(tree.length, 2);
+  const [router] = await cli(['show', 'routers']);
+  const subtree = await cli(['tree', router.id]);
+  assert.deepEqual(await cli(['tree', router.id, '--table']), subtree);
+  const tableText = await cli(['tree', '--table', '--routerId=' + router.id], false);
+  assert.ok(tableText.includes('│ Object'));
+  assert.ok(tableText.includes('Type / Codec'));
+  assert.ok(tableText.includes('connected'));
+  const fullTable = await cli(['tree', router.id, '--table', '--full'], false);
+  assert.ok(fullTable.includes(producers[0].id));
+  fs.writeFileSync(path.join(artifacts, 'tree-table.txt'), tableText);
+  passed('tree table renders real hierarchy, states, scores, filters and full ids without changing JSON');
   const inspect = await cli(['inspect', producers[0].id.slice(0, 8)]);
   assert.equal(inspect.summary.id, producers[0].id);
   assert.equal(inspect.children.consumer.length, 1);

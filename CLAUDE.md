@@ -34,6 +34,7 @@ npm run demo         # fake SFU on real mediasoup; needs `npm install --no-save 
 - `registry.ts`: `Map` of entries keyed by id (workers by pid) with parent/children links, per-kind sets, a producer -> consumers index, ancestor filters, unique-prefix id resolution (`resolve()`) and a bounded event log. `pipeToRouter()` reuses producer ids, so an entry's `key` can differ from its `id` (`<id>@<transportId>`). Always remove entries by object, never by id. Keep request handling linear: no per-object scans of the whole registry.
 - `describe.ts`: turns live objects into plain summaries. Duck-typed on purpose, so it works across mediasoup 3.x versions (e.g. `transportType()` falls back to the class name before 3.15). `UsageSampler` computes worker CPU %.
 - `handlers.ts`: `RequestHandler`, pure request logic (list/tree/inspect/stats/dump/find/events/summary/ids), easy to unit test.
+- `repl.ts`: opt-in native Node REPL per socket, with live object lookup/collections, separate output/prompt events and cleanup on disconnect. This runs trusted code with host privileges; it is not a sandbox.
 - `plain.ts`: `toPlain()` makes `appData`/dumps safe to send (cycles, class instances, depth). `flatten()` is used by `find`.
 
 Hard rules for server code: never throw into the host app, never keep its process alive (the http server, accepted sockets, engine.io heartbeats and timeouts are all `unref()`'d), and never import `mediasoup` (the user passes the module in, and types are structural).
@@ -45,12 +46,13 @@ Hard rules for server code: never throw into the host app, never keep its proces
 - `execute.ts`: runs a `Plan`. Shared by the shell and one-shot mode.
 - `shell.ts`: readline shell with persistent history (`~/.mediasoup_cli_history`), tab completion (`completer`, live ids via `IdCache`) and connection status. It closes readline while a watch owns the terminal and reopens it afterwards.
 - `watch.ts`: `runWatch` (alt screen, flicker-free redraw, refresh on timer and on `changed`, stops on q/Esc/Enter/Ctrl+C) and `followEvents`.
+- `repl.ts` in the CLI: local readline with remote JavaScript evaluation/completion; `.exit` or Ctrl+D/Ctrl+C hands input back to the shell.
 - `render.ts` / `format.ts`: tables (cli-table3), tree, stats grid, inspect, colors (chalk 4, CommonJS).
 - `client.ts`: Socket.IO client with `request()` timeouts and friendly connection/auth errors. `sanitize()` escapes control characters in everything received, because labels and `appData` come from remote peers.
 
 ### Configuration
 
-- Observer options: `port` (or legacy `PORT`), `host`, `token`, `maxEvents`. Env: `MEDIA_SOUP_CLI_PORT`, `MEDIA_SOUP_CLI_HOST`, `MEDIA_SOUP_CLI_TOKEN`.
+- Observer options: `port` (or legacy `PORT`), `host`, `token`, `maxEvents`, `allowWorkerSettings`, `allowRepl`. Both control flags default false and are checked server-side. Env: `MEDIA_SOUP_CLI_PORT`, `MEDIA_SOUP_CLI_HOST`, `MEDIA_SOUP_CLI_TOKEN`.
 - CLI resolution order: flags (`--port/--host/--token`) > env > `config.env` (written by the observer into the installed package root) > defaults.
 
 ### Command structure

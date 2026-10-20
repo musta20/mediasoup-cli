@@ -12,6 +12,7 @@ import {
 } from "../shared/protocol";
 import { RequestHandler } from "./handlers";
 import { Registry } from "./registry";
+import { ReplSession } from "./repl";
 import { EmitterLike, track } from "./tracker";
 
 export interface ObserverOptions {
@@ -28,6 +29,10 @@ export interface ObserverOptions {
   token?: string;
   /** How many lifecycle events to keep for `events`. Default 1000. */
   maxEvents?: number;
+  /** Allow logLevel/logTags to call worker.updateSettings(). Default false. */
+  allowWorkerSettings?: boolean;
+  /** Allow trusted CLI clients to run JavaScript in this process. Default false. */
+  allowRepl?: boolean;
 }
 
 export interface ObserverHandle {
@@ -144,7 +149,7 @@ export function observer(mediasoup: MediasoupLike, options: ObserverOptions = {}
 
   if (!isLoopback(host) && !token) {
     console.warn(
-      `[mediasoup-cli] the observer listens on ${host} without a token: anyone who can reach it can read your mediasoup state. Set the "token" option.`
+      `[mediasoup-cli] the observer listens on ${host} without a token: anyone who can reach it can read your mediasoup state${options.allowRepl || options.allowWorkerSettings ? " and use enabled server controls" : ""}. Set the "token" option.`
     );
   }
 
@@ -158,6 +163,10 @@ export function observer(mediasoup: MediasoupLike, options: ObserverOptions = {}
     pid: process.pid,
     nodeVersion: process.version,
     startedAt: Date.now(),
+    capabilities: {
+      workerSettings: options.allowWorkerSettings === true,
+      repl: options.allowRepl === true,
+    },
   };
   const handler = new RequestHandler(registry, info);
 
@@ -184,9 +193,44 @@ export function observer(mediasoup: MediasoupLike, options: ObserverOptions = {}
   io.engine.on("connection", unrefHeartbeat);
 
   io.on("connection", (socket: Socket) => {
+    let repl: ReplSession | undefined;
+    const closeRepl = () => {
+      const previous = repl;
+      repl = undefined;
+      previous?.close();
+    };
+    socket.on("disconnect", closeRepl);
     socket.on("request", async (request: Request, ack?: (res: Response) => void) => {
       if (typeof ack !== "function") return;
       try {
+        if (["replStart", "replInput", "replComplete", "replStop"].includes(request?.cmd)) {
+          if (!info.capabilities?.repl) {
+            throw new Error("JavaScript REPL is disabled; enable observer(mediasoup, { allowRepl: true })");
+          }
+          switch (request.cmd) {
+            case "replStart":
+              if (repl) throw new Error("a REPL session is already open on this connection");
+              repl = new ReplSession(registry, mediasoup, (event) => {
+                socket.emit("repl", event);
+                if (event.type === "closed") repl = undefined;
+              });
+              repl.start();
+              ack({ ok: true, data: null });
+              return;
+            case "replStop":
+              closeRepl();
+              ack({ ok: true, data: null });
+              return;
+            case "replInput":
+            case "replComplete":
+              if (!repl) throw new Error("no REPL session; run repl first");
+              ack({
+                ok: true,
+                data: request.cmd === "replInput" ? (repl.write(request.line), null) : await repl.complete(request.line),
+              });
+              return;
+          }
+        }
         if (request?.cmd === "subscribe" || request?.cmd === "unsubscribe") {
           if (request.topic !== "events") throw new Error(`unknown topic "${request.topic}"`);
           if (request.cmd === "subscribe") await socket.join("events");

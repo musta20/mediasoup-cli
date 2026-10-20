@@ -62,7 +62,7 @@ export const transportState = (t: TransportSummary): string => {
   return chalk.gray("-");
 };
 
-const consumerState = (c: ConsumerSummary): string => {
+const consumerState = (c: Pick<ConsumerSummary, "paused" | "producerPaused">): string => {
   if (c.paused && c.producerPaused) return chalk.yellow("paused (both)");
   if (c.paused) return chalk.yellow("paused");
   if (c.producerPaused) return chalk.yellow("producer paused");
@@ -232,27 +232,75 @@ export const describeLine = (s: ObjectSummary, full = false): string => {
   return [head, ...parts].join("  ");
 };
 
+/** Yield each object once in display order, retaining its branch indentation. */
+function* treeRows(node: TreeNode, prefix = "", branch = ""): Generator<{ summary: ObjectSummary; branch: string }> {
+  yield { summary: node.summary, branch: prefix + branch };
+  const childPrefix = prefix + (branch === "├─ " ? "│  " : branch === "└─ " ? "   " : "");
+  for (const [i, child] of node.children.entries()) {
+    yield* treeRows(child, childPrefix, i === node.children.length - 1 ? "└─ " : "├─ ");
+  }
+}
+
 export const renderTree = (roots: TreeNode[], full = false): string => {
   if (roots.length === 0) {
     return dim("No workers yet. Did you call observer(mediasoup) before createWorker()?");
   }
+  return roots.map((root) =>
+    [...treeRows(root)].map(({ summary, branch }) => dim(branch) + describeLine(summary, full)).join("\n")
+  ).join("\n\n");
+};
 
-  const lines: string[] = [];
-  const walk = (node: TreeNode, prefix: string, last: boolean, root: boolean) => {
-    const branch = root ? "" : last ? "└─ " : "├─ ";
-    lines.push(`${dim(prefix + branch)}${describeLine(node.summary, full)}`);
-    const childPrefix = root ? "" : prefix + (last ? "   " : "│  ");
-    node.children.forEach((child, i) =>
-      walk(child, childPrefix, i === node.children.length - 1, false)
-    );
-  };
+/** Shared columns keep mixed object kinds comparable without losing their tree path. */
+const treeCells = (s: ObjectSummary, full: boolean): [string, string, string, string] => {
+  const empty = dim("-");
+  const id = (value: string) => full ? value : shortId(value);
+  const details = (...parts: Array<string | undefined>) => parts.filter(Boolean).join(dim(" · ")) || empty;
+  const mediaType = (value: ProducerSummary | ConsumerSummary) => `${value.mediaKind} ${value.codec ?? ""}`.trim();
 
-  roots.forEach((root, i) => {
-    if (i > 0) lines.push("");
-    walk(root, "", true, true);
-  });
+  switch (s.kind) {
+    case "worker":
+      return [empty, s.died ? chalk.red("died") : chalk.green("running"), empty,
+        `cpu ${formatPercent(s.cpu)}${dim(" · ")}rss ${formatBytes(s.memory)}`];
+    case "webRtcServer":
+    case "router":
+      return [empty, empty, empty, plural(s.transports, "transport")];
+    case "transport":
+      return [s.type, transportState(s), empty, details(
+        s.remoteTuple && dim(`⇄ ${s.remoteTuple}`),
+        s.sctpState && `sctp ${formatState(s.sctpState)}`
+      )];
+    case "producer":
+      return [mediaType(s), s.paused ? chalk.yellow("paused") : chalk.green("active"), producerScores(s),
+        details(dim(s.type), dim(`→ ${plural(s.consumers, "consumer")}`))];
+    case "consumer":
+      return [mediaType(s), consumerState(s), consumerScore(s), details(
+        dim(s.type),
+        s.currentLayers || s.preferredLayers ? `layers ${layers(s)}` : undefined,
+        dim(`← producer ${id(s.producerId)}`)
+      )];
+    case "dataProducer":
+      return [s.type, s.paused ? chalk.yellow("paused") : chalk.green("active"), empty, details(
+        s.label && `"${s.label}"`,
+        s.protocol && dim(`protocol ${s.protocol}`),
+        dim(`→ ${plural(s.dataConsumers, "data consumer")}`)
+      )];
+    case "dataConsumer":
+      return [s.type, consumerState({ paused: Boolean(s.paused), producerPaused: Boolean(s.dataProducerPaused) }), empty,
+        details(s.label && `"${s.label}"`, s.protocol && dim(`protocol ${s.protocol}`), dim(`← dataProducer ${id(s.dataProducerId)}`))];
+  }
+};
 
-  return lines.join("\n");
+/** Render the same tree as a table, keeping branches beside colored kinds and ids. */
+export const renderTreeTable = (roots: TreeNode[], full = false): string => {
+  if (roots.length === 0) return renderTree(roots, full);
+  const t = table(["Object", "Type / Codec", "State", "Score", "Details"]);
+  for (const root of roots) {
+    for (const { summary, branch } of treeRows(root)) {
+      const label = `${dim(branch)}${kindLabel(summary.kind)} ${bold(full ? summary.id : shortId(summary.id))}`;
+      t.push([label, ...treeCells(summary, full)]);
+    }
+  }
+  return t.toString();
 };
 
 const formatValue = (key: string, value: unknown): string => {
