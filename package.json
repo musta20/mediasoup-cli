@@ -1,6 +1,6 @@
 {
   "name": "mediasoup-cli",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Live terminal monitor for mediasoup servers: workers, routers, transports, producers, consumers, stats and events.",
   "keywords": [
     "mediasoup",
@@ -17,14 +17,17 @@
   },
   "files": [
     "dist",
-    "config.env"
+    "config.env",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "watch": "tsc -p tsconfig.json -w",
     "start": "node dist/index.js",
-    "test": "node -e \"require('fs').rmSync('.test-build',{recursive:true,force:true})\" && tsc -p tsconfig.test.json && node --test --test-concurrency=1 \".test-build/test/**/*.test.js\"",
+    "test": "node scripts/test.cjs",
+    "test:live": "npm run build && node scripts/test-live.cjs",
     "demo": "node examples/demo-server.js",
+    "demo:live": "npm run build && node scripts/test-live.cjs --manual",
     "prepare": "npm run build"
   },
   "repository": {
@@ -48,6 +51,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "playwright": "^1.64.1",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

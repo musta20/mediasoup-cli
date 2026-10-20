@@ -175,6 +175,26 @@ describe("review regressions", () => {
     assert.equal(result.code, 0);
   });
 
+  it("shows help and version even with an invalid connection port", async () => {
+    for (const args of [["--help"], ["help", "tree"], ["--version", "--json"]]) {
+      const result = await run(["--port", "invalid", ...args]);
+      assert.equal(result.code, 0, result.stderr);
+      assert.ok(result.stdout.length > 0);
+      assert.equal(result.stderr, "");
+    }
+    const result = await run(["--port", "invalid", "tree"]);
+    assert.equal(result.code, 2);
+    assert.match(result.stderr, /invalid port/);
+  });
+
+  it("sanitizes special property names without changing the output prototype", () => {
+    const input = JSON.parse('{"__proto__":{"label":"peer"},"constructor":"peer"}');
+    const output = sanitize(input);
+    assert.deepEqual(output, input);
+    assert.equal(Object.getPrototypeOf(output), Object.prototype);
+    assert.equal(Object.hasOwn(output as object, "__proto__"), true);
+  });
+
   it("prints --version --json without an app", async () => {
     const result = await run(["--port", "1", "--version", "--json"]);
     assert.equal(result.code, 0);

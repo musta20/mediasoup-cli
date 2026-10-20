@@ -36,6 +36,14 @@ describe("toPlain", () => {
     assert.deepEqual(toPlain({ x: shared, y: shared }), { x: { a: 1 }, y: { a: 1 } });
   });
 
+  it("preserves special property names without changing the output prototype", () => {
+    const input = JSON.parse('{"__proto__":{"peerId":"alice"},"constructor":"peer"}');
+    const output = toPlain(input);
+    assert.deepEqual(output, input);
+    assert.equal(Object.getPrototypeOf(output), Object.prototype);
+    assert.equal(Object.hasOwn(output as object, "__proto__"), true);
+  });
+
   it("limits depth", () => {
     assert.deepEqual(toPlain({ a: { b: { c: 1 } } }, 2), { a: { b: "[Object]" } });
   });

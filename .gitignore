@@ -4,3 +4,5 @@ dist/
 *.log
 *.tgz
 .DS_Store
+
+.live-test-artifacts/

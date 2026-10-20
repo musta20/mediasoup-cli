@@ -26,9 +26,9 @@ export const sanitize = (value: unknown): unknown => {
   }
   if (Array.isArray(value)) return value.map(sanitize);
   if (value && typeof value === "object") {
-    const out: Record<string, unknown> = {};
-    for (const [key, item] of Object.entries(value)) out[sanitize(key) as string] = sanitize(item);
-    return out;
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [sanitize(key) as string, sanitize(item)])
+    );
   }
   return value;
 };

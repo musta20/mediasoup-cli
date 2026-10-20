@@ -30,10 +30,8 @@ export const main = async (argv: string[]): Promise<number> => {
   if (args.flags.noColor === true || process.env.NO_COLOR) chalk.level = 0;
 
   let planned: Plan;
-  let target: Target;
   try {
     planned = plan(argv);
-    target = resolveTarget(args);
   } catch (err) {
     process.stderr.write(formatError(err) + "\n");
     return 2;
@@ -47,6 +45,14 @@ export const main = async (argv: string[]): Promise<number> => {
   if (planned.type === "version") {
     process.stdout.write((planned.json ? JSON.stringify({ cli: packageVersion() }) : versionText()) + "\n");
     return 0;
+  }
+
+  let target: Target;
+  try {
+    target = resolveTarget(args);
+  } catch (err) {
+    process.stderr.write(formatError(err) + "\n");
+    return 2;
   }
 
   const client = new Client(target);

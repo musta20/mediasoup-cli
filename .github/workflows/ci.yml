@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/cli-v2]
   pull_request:
 
 jobs:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [22, 24]
+        node: [18, 20, 22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

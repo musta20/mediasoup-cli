@@ -169,6 +169,14 @@ npm test           # node:test, no mediasoup needed
 npm run demo       # needs: npm install --no-save mediasoup
 ```
 
+For a real server and browser test, see [the live integration test guide](test/live/README.md). It runs the official mediasoup-demo with two Chrome users using synthetic camera and microphone streams:
+
+```sh
+MEDIASOUP_DEMO_DIR=/path/to/mediasoup-demo npm run test:live
+```
+
+For visible fake browser users and a CLI command checklist, see [manual testing](test/live/MANUAL.md).
+
 ## License
 
 MIT

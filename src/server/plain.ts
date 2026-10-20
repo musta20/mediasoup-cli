@@ -54,11 +54,9 @@ export const toPlain = (value: unknown, maxDepth = 6): unknown => {
           : `[${name}]`;
       }
 
-      const out: Record<string, unknown> = {};
-      for (const [key, item] of Object.entries(obj)) {
-        out[key] = walk(item, depth + 1);
-      }
-      return out;
+      return Object.fromEntries(
+        Object.entries(obj).map(([key, item]) => [key, walk(item, depth + 1)])
+      );
     } finally {
       seen.delete(obj);
     }

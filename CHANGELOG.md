@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (suggested: 2.0.0)
+## 2.0.0 — 2026-10-20
 
 A rewrite of both the observer and the CLI. The `observer(mediasoup, { PORT })` API and the 1.x command syntax keep working.
 
@@ -11,6 +11,8 @@ A rewrite of both the observer and the CLI. The `observer(mediasoup, { PORT })` 
 - Node.js 18+ is required.
 
 ### Added
+
+- Opt-in `npm run test:live`: official mediasoup-demo, two synthetic-camera Chrome users, RTP/SCTP checks, CLI commands, watch/events, PTY controls and lifecycle cleanup.
 
 - Rich tables for every kind: ICE/DTLS state, tuples, codecs, scores, simulcast layers, paused state, children counts, age.
 - `tree`, `inspect`, `stats`, `dump`, `find`, `events`, `summary` and `top` commands.
@@ -28,6 +30,10 @@ A rewrite of both the observer and the CLI. The `observer(mediasoup, { PORT })` 
 - `npm run demo`, a fake SFU to try the tool. A test suite and CI.
 
 ### Fixed
+
+- Help and version commands work even when connection settings contain an invalid port.
+- Plain data conversion and CLI sanitization preserve `__proto__` keys without changing object prototypes.
+- The test runner passes explicit file paths so `npm test` works on Node.js 18 as well as newer releases.
 
 - Closed producers, consumers, data producers and data consumers stayed listed under their transport forever.
 - `watch workers` and `watch webrtcservers` never received updates, and `watch dataproducers` never streamed.
