@@ -2,9 +2,14 @@
 
 A live terminal monitor for [mediasoup](https://mediasoup.org) servers. Add one line to your app, then inspect workers, routers, transports, producers and consumers, follow lifecycle events, read RTP stats and search by `appData`, all from a second terminal.
 
+![mediasoup-cli tree showing colored object kinds, connection states and media scores](docs/assets/tree.svg)
+
+<details>
+<summary>View the tree as text</summary>
+
 ```text
 mediasoup ● › tree 6f87e30c
-router 6f87e30c  8 transports
+router 6f87e30c  3 transports
 ├─ transport c7b2d18f  webrtc  connected  ⇄ 203.0.113.7:51234 udp
 │  ├─ consumer e69f43ff  audio opus  simple  active  score 10/10  ← producer 5fcedbb0
 │  ├─ consumer e091e50d  video VP8  simulcast  paused  score 10/0  layers - (want 2/2)  ← producer 14eca64a
@@ -14,6 +19,8 @@ router 6f87e30c  8 transports
 └─ transport f071d75d  direct  -
    └─ dataProducer 8eba578d  direct  "chat"
 ```
+
+</details>
 
 ## Features
 
@@ -34,7 +41,7 @@ router 6f87e30c  8 transports
 ```sh
 npm install mediasoup-cli
 # or
-yarn add mediasoup-cli
+pnpm add mediasoup-cli
 ```
 
 Requires Node.js 18+ and mediasoup 3.x (tested with 3.12 and 3.28).
