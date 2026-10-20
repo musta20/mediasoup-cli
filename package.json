@@ -1,6 +1,6 @@
 {
   "name": "mediasoup-cli",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Live terminal monitor for mediasoup servers: workers, routers, transports, producers, consumers, stats and events.",
   "keywords": [
     "mediasoup",
